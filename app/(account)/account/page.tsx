@@ -37,6 +37,12 @@ export default async function AccountPage() {
       >
         Meus endereços
       </Link>
+      <Link
+        href="/account/orders"
+        className="mt-3 block w-full rounded-full border border-blue-600 p-3 text-center font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-neutral-900"
+      >
+        Meus pedidos
+      </Link>
       <form action={logoutAction} className="mt-8">
         <button className="w-full rounded-full border border-neutral-300 p-3 font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900">
           Sair

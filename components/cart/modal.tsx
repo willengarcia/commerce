@@ -132,12 +132,13 @@ export default function CartModal({
                     <form action={clearCartAction}>
                       <ClearCartButton />
                     </form>
-                    <button
-                      disabled
-                      className="mt-3 w-full cursor-not-allowed rounded-full bg-blue-600 p-3 text-sm font-medium text-white opacity-60"
+                    <Link
+                      href="/checkout"
+                      onClick={() => setIsOpen(false)}
+                      className="mt-3 block w-full rounded-full bg-blue-600 p-3 text-center text-sm font-medium text-white hover:opacity-90"
                     >
-                      Checkout disponível na próxima etapa
-                    </button>
+                      Finalizar pedido
+                    </Link>
                   </div>
                 </div>
               )}
