@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { apiFetch } from "./client";
 
 export const SESSION_COOKIE = "ecommerce_session";
+const CART_COOKIE = "cartId";
 
 export type LoginRequestDTO = { email: string; senha: string };
 
@@ -27,6 +28,7 @@ export async function login(
 
 export async function setSession(token: string): Promise<void> {
   const cookieStore = await cookies();
+  cookieStore.delete(CART_COOKIE);
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -40,5 +42,7 @@ export async function getSessionToken(): Promise<string | undefined> {
 }
 
 export async function clearSession(): Promise<void> {
-  (await cookies()).delete(SESSION_COOKIE);
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_COOKIE);
+  cookieStore.delete(CART_COOKIE);
 }

@@ -2,37 +2,23 @@
 
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { removeItem } from "components/cart/actions";
-import type { CartItem } from "lib/shopify/types";
 import { useActionState } from "react";
 
-export function DeleteItemButton({
-  item,
-  optimisticUpdate,
-}: {
-  item: CartItem;
-  optimisticUpdate: any;
-}) {
-  const [message, formAction] = useActionState(removeItem, null);
-  const merchandiseId = item.merchandise.id;
-  const removeItemAction = formAction.bind(null, merchandiseId);
-
+export function DeleteItemButton({ cartItemId }: { cartItemId: number }) {
+  const [message, action] = useActionState(
+    removeItem.bind(null, cartItemId),
+    undefined,
+  );
   return (
-    <form
-      action={async () => {
-        optimisticUpdate(merchandiseId, "delete");
-        removeItemAction();
-      }}
-    >
+    <form action={action}>
       <button
         type="submit"
-        aria-label="Remove cart item"
-        className="flex h-[24px] w-[24px] items-center justify-center rounded-full bg-neutral-500"
+        aria-label="Remover item do carrinho"
+        className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral-500"
       >
-        <XMarkIcon className="mx-[1px] h-4 w-4 text-white dark:text-black" />
+        <XMarkIcon className="h-4 w-4 text-white" />
       </button>
-      <p aria-live="polite" className="sr-only" role="status">
-        {message}
-      </p>
+      {message ? <p className="mt-1 text-xs text-red-600">{message}</p> : null}
     </form>
   );
 }

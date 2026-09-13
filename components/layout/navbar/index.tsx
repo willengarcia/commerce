@@ -63,7 +63,7 @@ export async function Navbar() {
           >
             {customer ? "Minha conta" : "Entrar"}
           </Link>
-          <CartModal />
+          <CartModal isAuthenticated={Boolean(customer)} />
         </div>
       </div>
     </nav>

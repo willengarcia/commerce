@@ -20,6 +20,8 @@ export function ProductDescription({ product }: { product: ProductViewModel }) {
           html={product.description}
         />
       ) : null}
+      <AddToCart product={product} />
     </>
   );
 }
+import { AddToCart } from "components/cart/add-to-cart";
