@@ -35,5 +35,5 @@ export async function createOrderAction(
   await clearCartId();
   revalidatePath("/", "layout");
   revalidatePath("/account/orders");
-  redirect(`/account/orders/${order.orderId}`);
+  redirect(`/account/orders/${order.orderId}/payment`);
 }

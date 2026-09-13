@@ -91,9 +91,12 @@ export default async function OrderPage(props: {
         />
       </section>
 
-      <p className="mt-8 rounded-lg bg-neutral-100 p-4 text-sm text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400">
-        O pagamento será disponibilizado na próxima etapa.
-      </p>
+      <Link
+        href={`/account/orders/${order.orderId}/payment`}
+        className="mt-8 block w-full rounded-full bg-blue-600 p-3 text-center font-medium text-white hover:opacity-90"
+      >
+        Ver pagamento PIX
+      </Link>
     </>
   );
 }
