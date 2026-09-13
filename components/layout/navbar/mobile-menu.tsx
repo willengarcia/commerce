@@ -9,7 +9,13 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Menu } from "lib/shopify/types";
 import Search, { SearchSkeleton } from "./search";
 
-export default function MobileMenu({ menu }: { menu: Menu[] }) {
+export default function MobileMenu({
+  menu,
+  isAuthenticated,
+}: {
+  menu: Menu[];
+  isAuthenticated: boolean;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
@@ -94,6 +100,14 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                     ))}
                   </ul>
                 ) : null}
+                <Link
+                  href={isAuthenticated ? "/account" : "/login"}
+                  prefetch={true}
+                  onClick={closeMobileMenu}
+                  className="block py-2 text-xl text-black transition-colors hover:text-neutral-500 dark:text-white"
+                >
+                  {isAuthenticated ? "Minha conta" : "Entrar"}
+                </Link>
               </div>
             </Dialog.Panel>
           </Transition.Child>

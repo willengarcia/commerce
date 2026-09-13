@@ -14,20 +14,25 @@ export async function apiFetch<T>(
     next?: { revalidate?: number; tags?: string[] };
   } = {},
 ): Promise<T> {
+  const { next, ...requestInit } = init;
   const response = await fetch(`${getBackendUrl()}${API_PATH}${path}`, {
-    ...init,
+    ...requestInit,
     headers: {
       Accept: "application/json",
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
-      ...init.headers,
+      ...(requestInit.body ? { "Content-Type": "application/json" } : {}),
+      ...requestInit.headers,
     },
-    next: { revalidate: 300, ...init.next },
+    ...(requestInit.cache === "no-store"
+      ? {}
+      : { next: { revalidate: 300, ...next } }),
   });
 
   const contentType = response.headers.get("content-type") ?? "";
-  const body: unknown = contentType.includes("application/json")
-    ? await response.json()
-    : await response.text();
+  const rawBody = await response.text();
+  const body: unknown =
+    contentType.includes("application/json") && rawBody
+      ? JSON.parse(rawBody)
+      : rawBody || null;
 
   if (!response.ok) {
     throw new ApiError(
