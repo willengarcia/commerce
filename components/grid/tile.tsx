@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import Image from "next/image";
+import Image, { type ImageProps } from "next/image";
 import Label from "../label";
 
 export function GridTileImage({
@@ -16,7 +16,8 @@ export function GridTileImage({
     currencyCode: string;
     position?: "bottom" | "center";
   };
-} & React.ComponentProps<typeof Image>) {
+  src?: ImageProps["src"];
+} & Omit<React.ComponentProps<typeof Image>, "src">) {
   return (
     <div
       className={clsx(
@@ -35,8 +36,13 @@ export function GridTileImage({
               isInteractive,
           })}
           {...props}
+          src={props.src}
         />
-      ) : null}
+      ) : (
+        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+          Sem imagem
+        </span>
+      )}
       {label ? (
         <Label
           title={label.title}

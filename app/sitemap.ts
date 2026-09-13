@@ -1,52 +1,45 @@
-import { getCollections, getPages, getProducts } from "lib/shopify";
-import { baseUrl, validateEnvironmentVariables } from "lib/utils";
-import { MetadataRoute } from "next";
+import { getCategories } from "lib/api/categories";
+import { getAllProducts } from "lib/api/products";
+import { getPages } from "lib/shopify";
+import { baseUrl } from "lib/utils";
+import type { MetadataRoute } from "next";
 
-type Route = {
-  url: string;
-  lastModified: string;
-};
+type Route = { url: string; lastModified?: string };
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  validateEnvironmentVariables();
+  const routes: Route[] = [
+    { url: baseUrl, lastModified: new Date().toISOString() },
+  ];
+  const [categories, products] = await Promise.all([
+    getCategories(),
+    getAllProducts(),
+  ]);
 
-  const routesMap = [""].map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date().toISOString(),
-  }));
-
-  const collectionsPromise = getCollections().then((collections) =>
-    collections.map((collection) => ({
-      url: `${baseUrl}${collection.path}`,
-      lastModified: collection.updatedAt,
+  routes.push(
+    ...categories.map((category) => ({
+      url: `${baseUrl}${category.path}`,
+      lastModified: category.updatedAt,
+    })),
+    ...products.map((product) => ({
+      url: `${baseUrl}/product/${product.id}`,
     })),
   );
 
-  const productsPromise = getProducts({}).then((products) =>
-    products.map((product) => ({
-      url: `${baseUrl}/product/${product.handle}`,
-      lastModified: product.updatedAt,
-    })),
-  );
-
-  const pagesPromise = getPages().then((pages) =>
-    pages.map((page) => ({
-      url: `${baseUrl}/${page.handle}`,
-      lastModified: page.updatedAt,
-    })),
-  );
-
-  let fetchedRoutes: Route[] = [];
-
-  try {
-    fetchedRoutes = (
-      await Promise.all([collectionsPromise, productsPromise, pagesPromise])
-    ).flat();
-  } catch (error) {
-    throw JSON.stringify(error, null, 2);
+  // Pages/CMS remain on Shopify until their own integration stage.
+  if (
+    process.env.SHOPIFY_STORE_DOMAIN &&
+    process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN
+  ) {
+    const pages = await getPages();
+    routes.push(
+      ...pages.map((page) => ({
+        url: `${baseUrl}/${page.handle}`,
+        lastModified: page.updatedAt,
+      })),
+    );
   }
 
-  return [...routesMap, ...fetchedRoutes];
+  return routes;
 }

@@ -12,6 +12,11 @@ export default {
         hostname: "cdn.shopify.com",
         pathname: "/s/files/**",
       },
+      {
+        protocol: "https",
+        hostname: "ecommercebackendjava-production.up.railway.app",
+        pathname: "/uploads/products/**",
+      },
     ],
   },
 };

@@ -1,28 +1,28 @@
 import Grid from "components/grid";
 import { GridTileImage } from "components/grid/tile";
-import { Product } from "lib/shopify/types";
+import type { ProductViewModel } from "lib/api/types";
 import Link from "next/link";
 
 export default function ProductGridItems({
   products,
 }: {
-  products: Product[];
+  products: ProductViewModel[];
 }) {
   return (
     <>
       {products.map((product) => (
-        <Grid.Item key={product.handle} className="animate-fadeIn">
+        <Grid.Item key={product.id} className="animate-fadeIn">
           <Link
             className="relative inline-block h-full w-full"
-            href={`/product/${product.handle}`}
+            href={`/product/${product.id}`}
             prefetch={true}
           >
             <GridTileImage
-              alt={product.title}
+              alt={product.name}
               label={{
-                title: product.title,
-                amount: product.priceRange.maxVariantPrice.amount,
-                currencyCode: product.priceRange.maxVariantPrice.currencyCode,
+                title: product.name,
+                amount: product.displayPrice,
+                currencyCode: product.currencyCode,
               }}
               src={product.featuredImage?.url}
               fill
