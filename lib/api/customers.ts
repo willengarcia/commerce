@@ -3,6 +3,7 @@ import "server-only";
 import { ApiError } from "./errors";
 import { apiFetch } from "./client";
 import { getSessionToken } from "./auth";
+import type { AddressResponseDTO } from "./addresses";
 
 export type CreateCustomerRequestDTO = {
   nomeCompleto: string;
@@ -19,7 +20,7 @@ export type CustomerResponseDTO = {
   email: string;
   telefone: string;
   status: string;
-  addresses: unknown[];
+  addresses: AddressResponseDTO[];
   dataCriacao: string;
   dataAtualizacao: string;
 };

@@ -1,6 +1,7 @@
 import { logoutAction } from "app/(account)/actions";
 import { getCurrentCustomer } from "lib/api/customers";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Minha conta" };
@@ -30,6 +31,12 @@ export default async function AccountPage() {
           <dd className="font-medium">{customer.status}</dd>
         </div>
       </dl>
+      <Link
+        href="/account/addresses"
+        className="mt-8 block w-full rounded-full bg-blue-600 p-3 text-center font-medium text-white hover:opacity-90"
+      >
+        Meus endereços
+      </Link>
       <form action={logoutAction} className="mt-8">
         <button className="w-full rounded-full border border-neutral-300 p-3 font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900">
           Sair
