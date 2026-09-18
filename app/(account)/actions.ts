@@ -3,6 +3,11 @@
 import { clearSession, login, setSession } from "lib/api/auth";
 import { createCustomer } from "lib/api/customers";
 import { ApiError } from "lib/api/errors";
+import {
+  normalizeCpf,
+  type RegistrationData,
+  validateRegistration,
+} from "lib/validation/customer";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -42,7 +47,7 @@ export async function registerAction(
   _previousState: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const customer = {
+  const customer: RegistrationData = {
     nomeCompleto: required(formData, "nomeCompleto"),
     cpf: required(formData, "cpf"),
     email: required(formData, "email"),
@@ -52,6 +57,13 @@ export async function registerAction(
   if (Object.values(customer).some((value) => !value)) {
     return { error: "Preencha todos os campos." };
   }
+
+  const validationErrors = validateRegistration(customer);
+  const firstError = Object.values(validationErrors)[0];
+  if (firstError) return { error: firstError };
+
+  customer.nomeCompleto = customer.nomeCompleto.replace(/\s+/g, " ");
+  customer.cpf = normalizeCpf(customer.cpf);
 
   try {
     await createCustomer(customer);

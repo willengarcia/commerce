@@ -1,6 +1,10 @@
 import Footer from "components/layout/footer";
 import { Gallery } from "components/product/gallery";
 import { ProductDescription } from "components/product/product-description";
+import {
+  RelatedProducts,
+  RelatedProductsSkeleton,
+} from "components/product/related-products";
 import { ApiError } from "lib/api/errors";
 import { getProduct } from "lib/api/products";
 import type { Metadata } from "next";
@@ -92,6 +96,12 @@ export default async function ProductPage(props: {
           </div>
         </div>
       </div>
+      <Suspense fallback={<RelatedProductsSkeleton />}>
+        <RelatedProducts
+          categoryId={product.categoryId}
+          currentProductId={product.id}
+        />
+      </Suspense>
       <Footer />
     </>
   );

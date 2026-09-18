@@ -137,3 +137,25 @@ export async function getAllProducts(): Promise<ProductViewModel[]> {
     ...remainingPages.flatMap((page) => page.content),
   ];
 }
+
+export async function getProductsByCategory(
+  categoryId: number,
+): Promise<ProductViewModel[]> {
+  const firstPage = await getProducts({ categoryId, size: 24 });
+  if (firstPage.totalPages <= 1) return firstPage.content;
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: firstPage.totalPages - 1 }, (_, index) =>
+      getProducts({
+        categoryId,
+        page: index + 1,
+        size: firstPage.size,
+      }),
+    ),
+  );
+
+  return [
+    ...firstPage.content,
+    ...remainingPages.flatMap((page) => page.content),
+  ];
+}
