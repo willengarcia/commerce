@@ -42,6 +42,8 @@ function adaptProduct(
     reservedQuantity: product.quantidadeReservada,
     sku: product.sku,
     categoryId: product.categoriaId,
+    brandId: product.brandId,
+    brandName: product.brandName,
     createdAt: product.dataCriacao,
     images,
     featuredImage: images[0],
@@ -73,6 +75,8 @@ function adaptProductListItem(
     displayPrice: promotionalPrice ?? product.preco.toString(),
     currencyCode: "BRL",
     categoryId: product.categoriaId,
+    brandId: product.brandId,
+    brandName: product.brandName,
     images: featuredImage ? [featuredImage] : [],
     featuredImage,
   };

@@ -40,9 +40,28 @@ export default async function CategoryPage(props: {
 
   return (
     <section>
-      <h1 className="mb-4 text-2xl font-semibold">{category.name}</h1>
+      <h1 className="text-2xl font-semibold">Produtos</h1>
+      <div className="mb-5 mt-3 flex flex-wrap items-center gap-2 text-sm">
+        <span className="rounded-full border border-neutral-300 px-3 py-1 dark:border-neutral-700">
+          Categoria: {category.name}
+        </span>
+        <Link
+          href="/search"
+          className="text-neutral-500 underline hover:text-blue-600"
+        >
+          Limpar filtros
+        </Link>
+      </div>
       {result.content.length === 0 ? (
-        <p className="py-3 text-lg">Nenhum produto nesta categoria.</p>
+        <div className="rounded-lg border border-neutral-200 p-8 text-center dark:border-neutral-800">
+          <p className="text-lg">Nenhum produto encontrado.</p>
+          <Link
+            href="/search"
+            className="mt-3 inline-block text-sm text-blue-600 underline"
+          >
+            Limpar filtros
+          </Link>
+        </div>
       ) : (
         <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <ProductGridItems products={result.content} />

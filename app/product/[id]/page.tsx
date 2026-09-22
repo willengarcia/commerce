@@ -6,8 +6,10 @@ import {
   RelatedProductsSkeleton,
 } from "components/product/related-products";
 import { ApiError } from "lib/api/errors";
+import { getCategories, getCategoryTrail } from "lib/api/categories";
 import { getProduct } from "lib/api/products";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -47,6 +49,12 @@ export default async function ProductPage(props: {
 }) {
   const { id } = await props.params;
   const product = await getProductOrNotFound(id);
+  const categories = product.categoryId
+    ? await getCategories().catch(() => [])
+    : [];
+  const categoryTrail = product.categoryId
+    ? getCategoryTrail(categories, product.categoryId)
+    : [];
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -70,6 +78,27 @@ export default async function ProductPage(props: {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
       <div className="mx-auto max-w-(--breakpoint-2xl) px-4">
+        {categoryTrail.length ? (
+          <nav
+            aria-label="Navegação estrutural"
+            className="mb-4 flex flex-wrap items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400"
+          >
+            <Link href="/" className="hover:text-blue-600 hover:underline">
+              Início
+            </Link>
+            {categoryTrail.map((category) => (
+              <span key={category.id} className="flex items-center gap-2">
+                <span aria-hidden="true">›</span>
+                <Link
+                  href={category.path}
+                  className="hover:text-blue-600 hover:underline"
+                >
+                  {category.name}
+                </Link>
+              </span>
+            ))}
+          </nav>
+        ) : null}
         <div className="flex flex-col rounded-lg border border-neutral-200 bg-white p-8 md:p-12 lg:flex-row lg:gap-8 dark:border-neutral-800 dark:bg-black">
           <div className="h-full w-full basis-full lg:basis-4/6">
             {product.images.length > 0 ? (
@@ -96,12 +125,14 @@ export default async function ProductPage(props: {
           </div>
         </div>
       </div>
-      <Suspense fallback={<RelatedProductsSkeleton />}>
-        <RelatedProducts
-          categoryId={product.categoryId}
-          currentProductId={product.id}
-        />
-      </Suspense>
+      {product.categoryId ? (
+        <Suspense fallback={<RelatedProductsSkeleton />}>
+          <RelatedProducts
+            categoryId={product.categoryId}
+            currentProductId={product.id}
+          />
+        </Suspense>
+      ) : null}
       <Footer />
     </>
   );

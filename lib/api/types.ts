@@ -30,7 +30,9 @@ export type ProductResponseDTO = {
   totalAvaliacoes: number;
   status: string;
   dataCriacao: string;
-  categoriaId: number;
+  categoriaId: number | null;
+  brandId: number | null;
+  brandName: string | null;
 };
 
 export type MainProductImageDTO = {
@@ -47,7 +49,9 @@ export type ProductListItemResponseDTO = {
   preco: number;
   precoPromocional: number | null;
   imagemPrincipal: MainProductImageDTO | null;
-  categoriaId: number;
+  categoriaId: number | null;
+  brandId: number | null;
+  brandName: string | null;
 };
 
 export type CategoryDTO = {
@@ -55,6 +59,16 @@ export type CategoryDTO = {
   name: string;
   description: string;
   ativo: boolean;
+  dataAtualizacao: string;
+  parentCategoryId?: number | null;
+};
+
+export type BrandDTO = {
+  id: number;
+  name: string;
+  slug: string;
+  ativo: boolean;
+  dataCriacao: string;
   dataAtualizacao: string;
 };
 
@@ -83,7 +97,9 @@ export type ProductViewModel = {
   stockQuantity?: number;
   reservedQuantity?: number;
   sku?: string;
-  categoryId: number;
+  categoryId: number | null;
+  brandId: number | null;
+  brandName: string | null;
   createdAt?: string;
   images: ImageViewModel[];
   featuredImage?: ImageViewModel;
@@ -95,6 +111,20 @@ export type CategoryViewModel = {
   description: string;
   active: boolean;
   path: string;
+  updatedAt: string;
+  parentCategoryId: number | null;
+};
+
+export type CategoryTreeNode = CategoryViewModel & {
+  children: CategoryTreeNode[];
+};
+
+export type BrandViewModel = {
+  id: number;
+  name: string;
+  slug: string;
+  active: boolean;
+  createdAt: string;
   updatedAt: string;
 };
 

@@ -32,14 +32,35 @@ export default async function SearchPage(props: {
   return (
     <>
       {searchValue ? (
-        <p className="mb-4">
-          {products.length === 0
-            ? "Nenhum produto corresponde a "
-            : `Exibindo ${products.length} ${resultsText} para `}
-          <span className="font-bold">&quot;{searchValue}&quot;</span>
-        </p>
+        <div className="mb-5">
+          <p>
+            {products.length === 0
+              ? "Nenhum produto corresponde a "
+              : `Exibindo ${products.length} ${resultsText} para `}
+            <span className="font-bold">&quot;{searchValue}&quot;</span>
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <span className="rounded-full border border-neutral-300 px-3 py-1 dark:border-neutral-700">
+              Busca: {searchValue}
+            </span>
+            <Link
+              href="/search"
+              className="text-neutral-500 underline hover:text-blue-600"
+            >
+              Limpar filtros
+            </Link>
+          </div>
+        </div>
       ) : products.length === 0 ? (
-        <p className="py-3 text-lg">Nenhum produto encontrado.</p>
+        <div className="rounded-lg border border-neutral-200 p-8 text-center dark:border-neutral-800">
+          <p className="text-lg">Nenhum produto encontrado.</p>
+          <Link
+            href="/search"
+            className="mt-3 inline-block text-sm text-blue-600 underline"
+          >
+            Limpar filtros
+          </Link>
+        </div>
       ) : null}
       {products.length > 0 ? (
         <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

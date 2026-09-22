@@ -1,18 +1,31 @@
 import clsx from "clsx";
 import { Suspense } from "react";
 
-import { getCategories } from "lib/api/categories";
+import { buildCategoryTree, getCategories } from "lib/api/categories";
+import type { CategoryTreeNode } from "lib/api/types";
 import FilterList from "./filter";
 
 async function CollectionList() {
-  const categories = await getCategories();
-  const items = [
-    { title: "Todos", path: "/search" },
-    ...categories.map((category) => ({
-      title: category.name,
-      path: category.path,
-    })),
-  ];
+  let categories;
+  try {
+    categories = buildCategoryTree(await getCategories());
+  } catch {
+    return (
+      <div className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mb-2 font-medium">Categorias</p>
+        <p>Não foi possível carregá-las.</p>
+      </div>
+    );
+  }
+  const flatten = (
+    nodes: CategoryTreeNode[],
+    depth = 0,
+  ): { title: string; path: string }[] =>
+    nodes.flatMap((category) => [
+      { title: `${"— ".repeat(depth)}${category.name}`, path: category.path },
+      ...flatten(category.children, depth + 1),
+    ]);
+  const items = [{ title: "Todos", path: "/search" }, ...flatten(categories)];
   return <FilterList list={items} title="Categorias" />;
 }
 
