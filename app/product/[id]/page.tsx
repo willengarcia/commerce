@@ -99,8 +99,8 @@ export default async function ProductPage(props: {
             ))}
           </nav>
         ) : null}
-        <div className="flex flex-col rounded-lg border border-neutral-200 bg-white p-8 md:p-12 lg:flex-row lg:gap-8 dark:border-neutral-800 dark:bg-black">
-          <div className="h-full w-full basis-full lg:basis-4/6">
+        <div className="flex flex-col gap-8 rounded-lg border border-neutral-200 bg-white p-4 sm:p-8 md:p-12 lg:flex-row dark:border-neutral-800 dark:bg-black">
+          <div className="h-full min-w-0 w-full basis-full lg:basis-4/6">
             {product.images.length > 0 ? (
               <Suspense
                 fallback={
@@ -120,15 +120,16 @@ export default async function ProductPage(props: {
               </div>
             )}
           </div>
-          <div className="basis-full lg:basis-2/6">
+          <div className="min-w-0 basis-full lg:basis-2/6">
             <ProductDescription product={product} />
           </div>
         </div>
       </div>
-      {product.categoryId ? (
-        <Suspense fallback={<RelatedProductsSkeleton />}>
+      {product.categoryId != null || product.brandId != null ? (
+        <Suspense key={product.id} fallback={<RelatedProductsSkeleton />}>
           <RelatedProducts
             categoryId={product.categoryId}
+            brandId={product.brandId}
             currentProductId={product.id}
           />
         </Suspense>

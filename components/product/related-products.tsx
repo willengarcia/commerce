@@ -1,14 +1,20 @@
-import { getProductsByCategory } from "lib/api/products";
+import { getProductRecommendations } from "lib/api/product-recommendations";
 import { RelatedProductsCarousel } from "./related-products-carousel";
 
 export async function RelatedProducts({
   categoryId,
+  brandId,
   currentProductId,
 }: {
-  categoryId: number;
+  categoryId: number | null;
+  brandId: number | null;
   currentProductId: number;
 }) {
-  const products = await getProductsByCategory(categoryId);
+  const products = await getProductRecommendations({
+    id: currentProductId,
+    categoryId,
+    brandId,
+  });
 
   if (products.length === 0) return null;
 
@@ -26,14 +32,11 @@ export async function RelatedProducts({
             id="related-products-title"
             className="text-xl font-semibold md:text-2xl"
           >
-            Produtos da mesma categoria
+            Produtos relacionados
           </h2>
         </div>
       </div>
-      <RelatedProductsCarousel
-        products={products}
-        currentProductId={currentProductId}
-      />
+      <RelatedProductsCarousel key={currentProductId} products={products} />
     </section>
   );
 }
@@ -41,7 +44,7 @@ export async function RelatedProducts({
 export function RelatedProductsSkeleton() {
   return (
     <section className="mx-auto mt-10 max-w-(--breakpoint-2xl) px-4">
-      <div className="mb-5 h-8 w-72 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+      <div className="mb-5 h-8 w-72 max-w-full animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
       <div className="flex gap-4 overflow-hidden">
         {Array.from({ length: 4 }, (_, index) => (
           <div

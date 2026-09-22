@@ -22,16 +22,19 @@ function adaptProduct(
   images: ImageViewModel[] = [],
 ): ProductViewModel {
   const promotionalPrice =
-    product.precoPromocional == null
-      ? null
-      : product.precoPromocional.toString();
+    product.precoPromocional != null &&
+    Number.isFinite(product.precoPromocional) &&
+    product.precoPromocional > 0 &&
+    product.precoPromocional < product.preco
+      ? product.precoPromocional.toString()
+      : null;
 
   return {
     id: product.id,
     name: product.nome,
     slug: product.slug,
-    shortDescription: product.descricaoCurta,
-    description: product.descricao,
+    shortDescription: product.descricaoCurta ?? "",
+    description: product.descricao ?? "",
     price: product.preco.toString(),
     promotionalPrice,
     displayPrice: promotionalPrice ?? product.preco.toString(),
@@ -42,7 +45,12 @@ function adaptProduct(
     stockQuantity: product.quantidadeEstoque,
     reservedQuantity: product.quantidadeReservada,
     sku: product.sku,
+    weight: product.peso,
+    height: product.altura,
+    width: product.largura,
+    length: product.comprimento,
     categoryId: product.categoriaId,
+    categoryName: product.categoriaName,
     brandId: product.brandId,
     brandName: product.brandName,
     createdAt: product.dataCriacao,

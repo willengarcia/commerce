@@ -10,10 +10,8 @@ const AUTOPLAY_INTERVAL_MS = 4_500;
 
 export function RelatedProductsCarousel({
   products,
-  currentProductId,
 }: {
   products: ProductViewModel[];
-  currentProductId: number;
 }) {
   const trackRef = useRef<HTMLUListElement>(null);
   const [interactionPaused, setInteractionPaused] = useState(false);
@@ -81,14 +79,10 @@ export function RelatedProductsCarousel({
           >
             <Link
               href={`/product/${product.id}`}
-              prefetch
-              aria-current={
-                product.id === currentProductId ? "page" : undefined
-              }
+              prefetch={false}
               className="relative block h-full w-full"
             >
               <GridTileImage
-                active={product.id === currentProductId}
                 alt={product.name}
                 label={{
                   title: product.name,
