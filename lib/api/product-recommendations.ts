@@ -1,39 +1,48 @@
 import { getProducts } from "./products";
 import type { ProductViewModel } from "./types";
 
-const RECOMMENDATION_LIMIT = 6;
-
 type RecommendationProduct = Pick<
   ProductViewModel,
   "id" | "categoryId" | "brandId"
 >;
+
+type RecommendationFilter = { categoryId?: number; brandId?: number };
+
+async function getRelatedCollection(
+  filter: RecommendationFilter,
+): Promise<ProductViewModel[]> {
+  const firstPage = await getProducts({ ...filter, page: 0, size: 24 }).catch(
+    () => null,
+  );
+  if (!firstPage) return [];
+
+  const products = [...firstPage.content];
+  for (let page = 1; page < firstPage.totalPages; page++) {
+    const result = await getProducts({
+      ...filter,
+      page,
+      size: firstPage.size,
+    }).catch(() => null);
+    // Keep successful pages if one optional recommendation request fails.
+    if (result) products.push(...result.content);
+  }
+  return products;
+}
 
 export async function getProductRecommendations({
   id,
   categoryId,
   brandId,
 }: RecommendationProduct): Promise<ProductViewModel[]> {
-  const queries: { categoryId?: number; brandId?: number }[] = [];
-  if (categoryId != null && brandId != null) {
-    queries.push({ categoryId, brandId });
-  }
+  // Full category and brand collections already include their intersection.
+  const queries: RecommendationFilter[] = [];
   if (categoryId != null) queries.push({ categoryId });
   if (brandId != null) queries.push({ brandId });
 
+  const collections = await Promise.all(queries.map(getRelatedCollection));
   const recommendations = new Map<number, ProductViewModel>();
-
-  for (const query of queries) {
-    if (recommendations.size >= RECOMMENDATION_LIMIT) break;
-
-    // One extra item allows the current product to be excluded without paging.
-    const page = await getProducts({
-      ...query,
-      page: 0,
-      size: RECOMMENDATION_LIMIT + 1,
-    }).catch(() => null);
-
-    // Recommendations are optional: keep successful sources if another fails.
-    for (const product of page?.content ?? []) {
+  for (const products of collections) {
+    for (const product of products) {
       if (product.id !== id && !recommendations.has(product.id)) {
         recommendations.set(product.id, product);
       }
@@ -47,7 +56,7 @@ export async function getProductRecommendations({
     return sameCategory ? (sameBrand ? 0 : 1) : 2;
   }
 
-  return [...recommendations.values()]
-    .sort((left, right) => priority(left) - priority(right))
-    .slice(0, RECOMMENDATION_LIMIT);
+  return [...recommendations.values()].sort(
+    (left, right) => priority(left) - priority(right),
+  );
 }
