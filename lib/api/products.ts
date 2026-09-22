@@ -14,6 +14,7 @@ type ProductFilters = {
   size?: number;
   name?: string;
   categoryId?: number;
+  brandId?: number;
 };
 
 function adaptProduct(
@@ -113,6 +114,9 @@ export async function getProducts(
   if (filters.name) params.set("name", filters.name);
   if (filters.categoryId != null) {
     params.set("categoryId", String(filters.categoryId));
+  }
+  if (filters.brandId != null) {
+    params.set("brandId", String(filters.brandId));
   }
 
   const page = await apiFetch<PageResponse<ProductListItemResponseDTO>>(

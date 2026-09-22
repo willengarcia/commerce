@@ -4,6 +4,7 @@ import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { Popover, PopoverButton, PopoverPanel } from "@headlessui/react";
 import type { BrandViewModel, CategoryTreeNode } from "lib/api/types";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 
 type CatalogNavigationProps = {
   categories: CategoryTreeNode[];
@@ -12,13 +13,19 @@ type CatalogNavigationProps = {
   brandsError?: boolean;
 };
 
-function CategoryItems({ nodes }: { nodes: CategoryTreeNode[] }) {
+function CategoryItems({
+  nodes,
+  hrefFor,
+}: {
+  nodes: CategoryTreeNode[];
+  hrefFor: (category: CategoryTreeNode) => string;
+}) {
   return (
     <ul className="space-y-1">
       {nodes.map((node) => (
         <li key={node.id}>
           <Link
-            href={node.path}
+            href={hrefFor(node)}
             className="flex items-center gap-1 rounded-md px-2 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-900"
           >
             {node.children.length ? (
@@ -30,7 +37,7 @@ function CategoryItems({ nodes }: { nodes: CategoryTreeNode[] }) {
           </Link>
           {node.children.length ? (
             <div className="ml-4 border-l border-neutral-200 pl-2 dark:border-neutral-800">
-              <CategoryItems nodes={node.children} />
+              <CategoryItems nodes={node.children} hrefFor={hrefFor} />
             </div>
           ) : null}
         </li>
@@ -53,6 +60,27 @@ export function CatalogNavigation({
   categoriesError,
   brandsError,
 }: CatalogNavigationProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  function categoryHref(category: CategoryTreeNode): string {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    params.delete("categoryId");
+    const query = params.toString();
+    return `${category.path}${query ? `?${query}` : ""}`;
+  }
+
+  function brandHref(brandId: number): string {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("brandId", String(brandId));
+    params.delete("page");
+    const targetPath = pathname.startsWith("/search/category/")
+      ? pathname
+      : "/search";
+    return `${targetPath}?${params}`;
+  }
+
   return (
     <div className="hidden border-y border-neutral-200 md:block dark:border-neutral-800">
       <div className="mx-auto flex max-w-(--breakpoint-2xl) items-center gap-7 px-6 py-2 text-sm">
@@ -71,7 +99,7 @@ export function CatalogNavigation({
                 Não foi possível carregar as categorias.
               </MenuMessage>
             ) : categories.length ? (
-              <CategoryItems nodes={categories} />
+              <CategoryItems nodes={categories} hrefFor={categoryHref} />
             ) : (
               <MenuMessage>Nenhuma categoria disponível.</MenuMessage>
             )}
@@ -93,23 +121,19 @@ export function CatalogNavigation({
             ) : brands.length ? (
               <ul className="space-y-1">
                 {brands.map((brand) => (
-                  <li
-                    key={brand.id}
-                    className="rounded-md px-2 py-1.5 text-sm text-neutral-700 dark:text-neutral-300"
-                  >
-                    {brand.name}
+                  <li key={brand.id}>
+                    <Link
+                      href={brandHref(brand.id)}
+                      className="block rounded-md px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900"
+                    >
+                      {brand.name}
+                    </Link>
                   </li>
                 ))}
               </ul>
             ) : (
               <MenuMessage>Nenhuma marca disponível.</MenuMessage>
             )}
-            {brands.length ? (
-              <p className="mt-2 border-t border-neutral-200 px-2 pt-2 text-xs text-neutral-500 dark:border-neutral-800">
-                O filtro por marca será ativado quando estiver disponível na API
-                pública.
-              </p>
-            ) : null}
           </PopoverPanel>
         </Popover>
       </div>

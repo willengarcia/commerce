@@ -2,16 +2,24 @@
 
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import Form from "next/form";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function Search() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const categoryFromPath = pathname.match(/^\/search\/category\/(\d+)/)?.[1];
+  const categoryId = categoryFromPath ?? searchParams.get("categoryId");
+  const brandId = searchParams.get("brandId");
 
   return (
     <Form
       action="/search"
       className="w-max-[550px] relative w-full lg:w-80 xl:w-full"
     >
+      {categoryId ? (
+        <input type="hidden" name="categoryId" value={categoryId} />
+      ) : null}
+      {brandId ? <input type="hidden" name="brandId" value={brandId} /> : null}
       <input
         key={searchParams?.get("q")}
         type="text"

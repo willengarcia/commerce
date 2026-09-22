@@ -35,6 +35,22 @@ export default function MobileMenu({
   const [isOpen, setIsOpen] = useState(false);
   const openMobileMenu = () => setIsOpen(true);
   const closeMobileMenu = () => setIsOpen(false);
+  const categoryHref = (category: CategoryTreeNode) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    params.delete("categoryId");
+    const query = params.toString();
+    return `${category.path}${query ? `?${query}` : ""}`;
+  };
+  const brandHref = (brandId: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("brandId", String(brandId));
+    params.delete("page");
+    const targetPath = pathname.startsWith("/search/category/")
+      ? pathname
+      : "/search";
+    return `${targetPath}?${params}`;
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -105,6 +121,7 @@ export default function MobileMenu({
                     <CategoryAccordion
                       nodes={categories}
                       closeMenu={closeMobileMenu}
+                      hrefFor={categoryHref}
                     />
                   ) : (
                     <MobileMessage>Nenhuma categoria disponível.</MobileMessage>
@@ -118,11 +135,15 @@ export default function MobileMenu({
                   ) : brands.length ? (
                     <ul className="space-y-1 py-1 pl-3">
                       {brands.map((brand) => (
-                        <li
-                          key={brand.id}
-                          className="py-1.5 text-base text-neutral-700 dark:text-neutral-300"
-                        >
-                          {brand.name}
+                        <li key={brand.id}>
+                          <Link
+                            href={brandHref(brand.id)}
+                            prefetch
+                            onClick={closeMobileMenu}
+                            className="block py-2 text-base text-neutral-700 dark:text-neutral-300"
+                          >
+                            {brand.name}
+                          </Link>
                         </li>
                       ))}
                     </ul>
@@ -200,10 +221,12 @@ function MobileCatalogSection({
 function CategoryAccordion({
   nodes,
   closeMenu,
+  hrefFor,
   depth = 0,
 }: {
   nodes: CategoryTreeNode[];
   closeMenu: () => void;
+  hrefFor: (category: CategoryTreeNode) => string;
   depth?: number;
 }) {
   return (
@@ -219,6 +242,7 @@ function CategoryAccordion({
           key={node.id}
           node={node}
           closeMenu={closeMenu}
+          hrefFor={hrefFor}
           depth={depth}
         />
       ))}
@@ -229,10 +253,12 @@ function CategoryAccordion({
 function CategoryAccordionItem({
   node,
   closeMenu,
+  hrefFor,
   depth,
 }: {
   node: CategoryTreeNode;
   closeMenu: () => void;
+  hrefFor: (category: CategoryTreeNode) => string;
   depth: number;
 }) {
   const [open, setOpen] = useState(false);
@@ -242,7 +268,7 @@ function CategoryAccordionItem({
     <li>
       <div className="flex items-center gap-1">
         <Link
-          href={node.path}
+          href={hrefFor(node)}
           prefetch
           onClick={closeMenu}
           className="min-w-0 flex-1 py-2 text-base text-neutral-800 dark:text-neutral-200"
@@ -271,6 +297,7 @@ function CategoryAccordionItem({
           <CategoryAccordion
             nodes={node.children}
             closeMenu={closeMenu}
+            hrefFor={hrefFor}
             depth={depth + 1}
           />
         </div>
