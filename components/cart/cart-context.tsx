@@ -1,22 +1,42 @@
 "use client";
 
-import type { CartDetailsDTO } from "lib/api/cart";
-import { createContext, use, useContext } from "react";
+import { syncCartCacheAction } from "components/cart/actions";
+import type { CurrentCartResolution } from "lib/api/cart";
+import { createContext, use, useContext, useEffect } from "react";
 
-const CartContext = createContext<Promise<CartDetailsDTO | undefined> | null>(
-  null,
-);
+const CartContext = createContext<Promise<CurrentCartResolution> | null>(null);
 
 export function CartProvider({
   children,
   cartPromise,
 }: {
   children: React.ReactNode;
-  cartPromise: Promise<CartDetailsDTO | undefined>;
+  cartPromise: Promise<CurrentCartResolution>;
 }) {
   return (
-    <CartContext.Provider value={cartPromise}>{children}</CartContext.Provider>
+    <CartContext.Provider value={cartPromise}>
+      <CartCacheSync cartPromise={cartPromise} />
+      {children}
+    </CartContext.Provider>
   );
+}
+
+function CartCacheSync({
+  cartPromise,
+}: {
+  cartPromise: Promise<CurrentCartResolution>;
+}) {
+  const { recoveredCartId, clearCachedCartId } = use(cartPromise);
+
+  useEffect(() => {
+    if (recoveredCartId !== undefined) {
+      void syncCartCacheAction(recoveredCartId);
+    } else if (clearCachedCartId) {
+      void syncCartCacheAction();
+    }
+  }, [clearCachedCartId, recoveredCartId]);
+
+  return null;
 }
 
 export function useCart() {
@@ -24,5 +44,5 @@ export function useCart() {
   if (!cartPromise) {
     throw new Error("useCart deve ser usado dentro de CartProvider");
   }
-  return use(cartPromise);
+  return use(cartPromise).cart;
 }

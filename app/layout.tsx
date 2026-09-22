@@ -2,7 +2,7 @@ import { CartProvider } from "components/cart/cart-context";
 import { Navbar } from "components/layout/navbar";
 import { WelcomeToast } from "components/welcome-toast";
 import { GeistSans } from "geist/font/sans";
-import { getCurrentCart } from "lib/api/cart";
+import { getCurrentCartResolution } from "lib/api/cart";
 import { ReactNode } from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -28,7 +28,7 @@ export default async function RootLayout({
   children: ReactNode;
 }) {
   // Don't await the fetch, pass the Promise to the context provider
-  const cart = getCurrentCart();
+  const cart = getCurrentCartResolution();
 
   return (
     <html lang="en" className={GeistSans.variable}>

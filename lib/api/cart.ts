@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { getSessionToken } from "./auth";
 import { apiFetch } from "./client";
 import { ApiError } from "./errors";
@@ -48,6 +49,12 @@ export type CartDetailsDTO = {
   address: unknown | null;
 };
 
+export type CurrentCartResolution = {
+  cart: CartDetailsDTO | undefined;
+  recoveredCartId?: number;
+  clearCachedCartId?: boolean;
+};
+
 async function authHeaders(): Promise<HeadersInit> {
   const token = await getSessionToken();
   if (!token) throw new ApiError(401, "Entre para acessar o carrinho.", null);
@@ -67,6 +74,18 @@ export async function getCartById(id: number): Promise<CartDetailsDTO> {
     headers: await authHeaders(),
     cache: "no-store",
   });
+}
+
+export async function getMyActiveCart(): Promise<CartDTO | undefined> {
+  try {
+    return await apiFetch<CartDTO>("/carts/me", {
+      headers: await authHeaders(),
+      cache: "no-store",
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return undefined;
+    throw error;
+  }
 }
 
 export async function getCartItems(id: number): Promise<CartItemDTO[]> {
@@ -127,19 +146,44 @@ export async function clearCartId(): Promise<void> {
   (await cookies()).delete(CART_COOKIE);
 }
 
-export async function getCurrentCart(): Promise<CartDetailsDTO | undefined> {
+async function resolveCurrentCart(): Promise<CurrentCartResolution> {
   const [token, cartId] = await Promise.all([getSessionToken(), getCartId()]);
-  if (!token || !cartId) return undefined;
-  try {
-    const cart = await getCartById(cartId);
-    return cart.cart.status === "ATIVO" ? cart : undefined;
-  } catch (error) {
-    if (
-      error instanceof ApiError &&
-      (error.status === 403 || error.status === 404 || error.status === 409)
-    ) {
-      return undefined;
-    }
-    throw error;
+  if (!token) {
+    return { cart: undefined, clearCachedCartId: Boolean(cartId) };
   }
+
+  if (cartId) {
+    try {
+      const cachedCart = await getCartById(cartId);
+      if (cachedCart.cart.status === "ATIVO") return { cart: cachedCart };
+    } catch (error) {
+      if (
+        !(error instanceof ApiError) ||
+        ![403, 404, 409].includes(error.status)
+      ) {
+        throw error;
+      }
+    }
+  }
+
+  const activeCart = await getMyActiveCart();
+  if (!activeCart) {
+    return { cart: undefined, clearCachedCartId: Boolean(cartId) };
+  }
+
+  const cart = await getCartById(activeCart.id);
+  if (cart.cart.status !== "ATIVO") {
+    return { cart: undefined, clearCachedCartId: Boolean(cartId) };
+  }
+
+  return {
+    cart,
+    recoveredCartId: activeCart.id !== cartId ? activeCart.id : undefined,
+  };
+}
+
+export const getCurrentCartResolution = cache(resolveCurrentCart);
+
+export async function getCurrentCart(): Promise<CartDetailsDTO | undefined> {
+  return (await getCurrentCartResolution()).cart;
 }

@@ -60,3 +60,14 @@ export async function clearCartAction(): Promise<void> {
   await clearCartId();
   revalidatePath("/", "layout");
 }
+
+export async function syncCartCacheAction(cartId?: number): Promise<void> {
+  if (cartId === undefined) {
+    await clearCartId();
+    return;
+  }
+
+  if (!Number.isSafeInteger(cartId) || cartId <= 0) return;
+  if (!(await getSessionToken())) return;
+  await setCartId(cartId);
+}
