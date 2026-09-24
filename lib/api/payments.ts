@@ -8,7 +8,13 @@ export type PaymentResponseDTO = {
   id: number;
   orderId: number;
   metodoPagamento: "PIX";
-  statusPagamento: string;
+  statusPagamento:
+    | "PENDENTE"
+    | "APROVADO"
+    | "CANCELADO"
+    | "EXPIRADO"
+    | "RECUSADO"
+    | "REEMBOLSADO";
   provider: string;
   valor: number;
   externalId: string;

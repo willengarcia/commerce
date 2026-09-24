@@ -21,17 +21,44 @@ import { useFormStatus } from "react-dom";
 const POLLING_INTERVAL_MS = 5_000;
 const POLLING_LIMIT_MS = 10 * 60_000;
 
-export function PaymentExperience({ orderId }: { orderId: number }) {
+const REUSABLE_PAYMENT_STATUSES = [
+  "PENDENTE",
+  "APROVADO",
+  "REEMBOLSADO",
+] as const;
+
+export function PaymentExperience({
+  orderId,
+  initialPayment,
+}: {
+  orderId: number;
+  initialPayment?: PaymentResponseDTO;
+}) {
+  const [payment, setPayment] = useState(initialPayment);
   const [state, action] = useActionState(
     createPaymentAction.bind(null, orderId),
     {},
   );
 
-  if (state.payment) return <PaymentDetails initialPayment={state.payment} />;
+  useEffect(() => {
+    if (state.payment) setPayment(state.payment);
+  }, [state.payment]);
+
+  if (
+    payment &&
+    REUSABLE_PAYMENT_STATUSES.some(
+      (status) => status === payment.statusPagamento,
+    )
+  ) {
+    return <PaymentDetails payment={payment} onPaymentChange={setPayment} />;
+  }
 
   return (
     <section className="mt-6">
       <h2 className="mb-4 text-lg font-semibold">Escolha como pagar</h2>
+      {payment ? (
+        <InactivePaymentMessage status={payment.statusPagamento} />
+      ) : null}
       {state.error ? <ErrorMessage message={state.error} /> : null}
       <div className="grid gap-4 sm:grid-cols-3">
         <form action={action}>
@@ -74,15 +101,16 @@ function DisabledCard({ title }: { title: string }) {
 }
 
 function PaymentDetails({
-  initialPayment,
+  payment,
+  onPaymentChange,
 }: {
-  initialPayment: PaymentResponseDTO;
+  payment: PaymentResponseDTO;
+  onPaymentChange: (payment: PaymentResponseDTO) => void;
 }) {
-  const [payment, setPayment] = useState(initialPayment);
   const [error, setError] = useState<string>();
   const [copied, setCopied] = useState(false);
   const [isExpired, setIsExpired] = useState(
-    () => Date.now() >= new Date(initialPayment.dataExpiracao).getTime(),
+    () => Date.now() >= new Date(payment.dataExpiracao).getTime(),
   );
   const [pollingTimedOut, setPollingTimedOut] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -113,7 +141,7 @@ function PaymentDetails({
       try {
         const result = await refreshPaymentAction(payment.id);
         setError(result.error);
-        if (result.payment) setPayment(result.payment);
+        if (result.payment) onPaymentChange(result.payment);
       } finally {
         requestInFlight.current = false;
       }
@@ -138,6 +166,7 @@ function PaymentDetails({
     payment.dataExpiracao,
     payment.id,
     pollingTimedOut,
+    onPaymentChange,
   ]);
 
   function run(
@@ -150,7 +179,7 @@ function PaymentDetails({
         const result = await action();
         setError(result.error);
         if (result.payment) {
-          setPayment(result.payment);
+          onPaymentChange(result.payment);
           setIsExpired(
             Date.now() >= new Date(result.payment.dataExpiracao).getTime(),
           );
@@ -258,6 +287,23 @@ function PaymentDetails({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function InactivePaymentMessage({ status }: { status: string }) {
+  const messages: Record<string, string> = {
+    CANCELADO:
+      "O pagamento anterior foi cancelado. Você pode tentar novamente.",
+    EXPIRADO: "O pagamento anterior expirou. Você pode gerar um novo PIX.",
+    RECUSADO: "O pagamento anterior foi recusado. Você pode tentar novamente.",
+  };
+  const message = messages[status];
+  if (!message) return null;
+
+  return (
+    <p className="mb-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+      {message}
+    </p>
   );
 }
 

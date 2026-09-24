@@ -91,12 +91,14 @@ export default async function OrderPage(props: {
         />
       </section>
 
-      <Link
-        href={`/account/orders/${order.orderId}/payment`}
-        className="mt-8 block w-full rounded-full bg-blue-600 p-3 text-center font-medium text-white hover:opacity-90"
-      >
-        Ver pagamento PIX
-      </Link>
+      {order.status === "AGUARDANDO_PAGAMENTO" ? (
+        <Link
+          href={`/account/orders/${order.orderId}/payment`}
+          className="mt-8 block w-full rounded-full bg-blue-600 p-3 text-center font-medium text-white hover:opacity-90"
+        >
+          Ver pagamento PIX
+        </Link>
+      ) : null}
     </>
   );
 }

@@ -3,6 +3,7 @@ import { PaymentExperience } from "components/payment/payment-experience";
 import { getCurrentCustomer } from "lib/api/customers";
 import { ApiError } from "lib/api/errors";
 import { getOrder } from "lib/api/orders";
+import { getPaymentByOrder } from "lib/api/payments";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -22,6 +23,13 @@ export default async function PaymentPage(props: {
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
+  }
+
+  let payment;
+  try {
+    payment = await getPaymentByOrder(orderId);
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 404) throw error;
   }
 
   return (
@@ -46,7 +54,7 @@ export default async function PaymentPage(props: {
           className="font-semibold"
         />
       </div>
-      <PaymentExperience orderId={orderId} />
+      <PaymentExperience orderId={orderId} initialPayment={payment} />
     </>
   );
 }
