@@ -7,6 +7,7 @@ import { ReactNode } from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { baseUrl } from "lib/utils";
+import { Analytics } from "@vercel/analytics/next";
 
 const { SITE_NAME } = process.env;
 
@@ -41,6 +42,7 @@ export default async function RootLayout({
             <WelcomeToast />
           </main>
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );
