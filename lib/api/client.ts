@@ -1,6 +1,7 @@
 import { ApiError, getApiErrorMessage } from "./errors";
 
 const API_PATH = "/api/v1";
+const API_TIMEOUT_MS = 15_000;
 
 function getBackendUrl(): string {
   const value = process.env.BACKEND_API_URL;
@@ -17,6 +18,7 @@ export async function apiFetch<T>(
   const { next, ...requestInit } = init;
   const response = await fetch(`${getBackendUrl()}${API_PATH}${path}`, {
     ...requestInit,
+    signal: requestInit.signal ?? AbortSignal.timeout(API_TIMEOUT_MS),
     headers: {
       Accept: "application/json",
       ...(requestInit.body ? { "Content-Type": "application/json" } : {}),

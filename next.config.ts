@@ -1,6 +1,5 @@
 export default {
   experimental: {
-    ppr: true,
     inlineCss: true,
     useCache: true,
   },
@@ -15,6 +14,11 @@ export default {
       {
         protocol: "https",
         hostname: "ecommercebackendjava-production.up.railway.app",
+        pathname: "/uploads/products/**",
+      },
+      {
+        protocol: "https",
+        hostname: "ecommercebackendjava-homolog.up.railway.app",
         pathname: "/uploads/products/**",
       },
     ],
