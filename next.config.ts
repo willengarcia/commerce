@@ -21,6 +21,11 @@ export default {
         hostname: "ecommercebackendjava-homolog.up.railway.app",
         pathname: "/uploads/products/**",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/dmqfiovod/image/upload/**",
+      },
     ],
   },
 };
