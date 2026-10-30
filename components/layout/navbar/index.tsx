@@ -89,12 +89,14 @@ export async function Navbar() {
           </div>
         </div>
       </nav>
+      <Suspense fallback={null}>
       <CatalogNavigation
         categories={categories}
         brands={brands}
         categoriesError={categoriesResult.status === "rejected"}
         brandsError={brandsResult.status === "rejected"}
       />
+      </Suspense>
     </header>
   );
 }

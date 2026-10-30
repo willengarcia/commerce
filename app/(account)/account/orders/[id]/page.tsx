@@ -48,6 +48,10 @@ export default async function OrderPage(props: {
         />
       </div>
 
+      <p className="mt-4 text-sm text-neutral-500">
+        Atualizações do pedido poderão ser enviadas por e-mail. O status exibido
+        aqui é o informado pelo sistema.
+      </p>
       <section className="mt-8">
         <h2 className="mb-3 text-lg font-semibold">Itens</h2>
         <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 px-4 dark:divide-neutral-700 dark:border-neutral-800">
@@ -63,6 +67,9 @@ export default async function OrderPage(props: {
                 >
                   {item.nomeProduto}
                 </Link>
+                {order.status === "ENTREGUE" ? (
+                  <Link href={`/product/${item.productId}#avaliacoes`} className="mt-2 block text-blue-600 hover:underline">Avaliar produto</Link>
+                ) : null}
                 <span className="block text-neutral-500">
                   {item.skuProduto} · Quantidade: {item.quantidade}
                 </span>
@@ -96,7 +103,7 @@ export default async function OrderPage(props: {
           href={`/account/orders/${order.orderId}/payment`}
           className="mt-8 block w-full rounded-full bg-blue-600 p-3 text-center font-medium text-white hover:opacity-90"
         >
-          Ver pagamento PIX
+          Ver pagamento
         </Link>
       ) : null}
     </>

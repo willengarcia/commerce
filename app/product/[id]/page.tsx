@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ProductReviews } from "components/reviews/product-reviews";
 
 function parseId(value: string): number {
   const id = Number(value);
@@ -134,6 +135,19 @@ export default async function ProductPage(props: {
           />
         </Suspense>
       ) : null}
+      <Suspense
+        key={`reviews-${product.id}`}
+        fallback={
+          <p
+            role="status"
+            className="mx-auto max-w-(--breakpoint-2xl) px-4 py-8"
+          >
+            Carregando avaliações...
+          </p>
+        }
+      >
+        <ProductReviews productId={product.id} />
+      </Suspense>
       <Footer />
     </>
   );

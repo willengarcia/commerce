@@ -6,7 +6,9 @@
     "start": "next start",
     "prettier": "prettier --write --ignore-unknown .",
     "prettier:check": "prettier --check --ignore-unknown .",
-    "test": "pnpm prettier:check"
+    "test": "pnpm prettier:check",
+    "test:customer": "node --test tests/customer-v110.test.cjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
