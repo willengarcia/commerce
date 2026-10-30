@@ -100,7 +100,7 @@ function DisabledCard({ title }: { title: string }) {
   );
 }
 
-function PaymentDetails({
+export function PaymentDetails({
   payment,
   onPaymentChange,
 }: {
@@ -110,7 +110,7 @@ function PaymentDetails({
   const [error, setError] = useState<string>();
   const [copied, setCopied] = useState(false);
   const [isExpired, setIsExpired] = useState(
-    () => Date.now() >= new Date(payment.dataExpiracao).getTime(),
+    () => Date.now() >= new Date(payment.dataExpiracao ?? "").getTime(),
   );
   const [pollingTimedOut, setPollingTimedOut] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -127,7 +127,7 @@ function PaymentDetails({
         return;
       }
 
-      if (Date.now() >= new Date(payment.dataExpiracao).getTime()) {
+      if (Date.now() >= new Date(payment.dataExpiracao ?? "").getTime()) {
         setIsExpired(true);
         return;
       }
@@ -181,7 +181,8 @@ function PaymentDetails({
         if (result.payment) {
           onPaymentChange(result.payment);
           setIsExpired(
-            Date.now() >= new Date(result.payment.dataExpiracao).getTime(),
+            Date.now() >=
+              new Date(result.payment.dataExpiracao ?? "").getTime(),
           );
         }
       } finally {
@@ -234,6 +235,10 @@ function PaymentDetails({
           </button>
         </div>
       ) : null}
+      <p className="mt-4 text-sm text-neutral-500">
+        Os dados do PIX também poderão ser enviados por e-mail. Não é necessário
+        gerar outra cobrança para receber a notificação.
+      </p>
       <dl className="mt-6 space-y-2 text-left text-sm">
         <div className="flex justify-between gap-4">
           <dt className="text-neutral-500">Valor</dt>
@@ -243,7 +248,11 @@ function PaymentDetails({
         </div>
         <div className="flex justify-between gap-4">
           <dt className="text-neutral-500">Expiração</dt>
-          <dd>{new Date(payment.dataExpiracao).toLocaleString("pt-BR")}</dd>
+          <dd>
+            {payment.dataExpiracao
+              ? new Date(payment.dataExpiracao).toLocaleString("pt-BR")
+              : "Não informada"}
+          </dd>
         </div>
         {payment.dataPagamento ? (
           <div className="flex justify-between gap-4">

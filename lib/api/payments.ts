@@ -3,11 +3,12 @@ import "server-only";
 import { getSessionToken } from "./auth";
 import { apiFetch } from "./client";
 import { ApiError } from "./errors";
+import type { CardPaymentData } from "lib/validation/customer-v110";
 
 export type PaymentResponseDTO = {
   id: number;
   orderId: number;
-  metodoPagamento: "PIX";
+  metodoPagamento: "PIX" | "CARTAO_CREDITO" | "CARTAO_DEBITO";
   statusPagamento:
     | "PENDENTE"
     | "APROVADO"
@@ -23,7 +24,7 @@ export type PaymentResponseDTO = {
   urlBoleto: string | null;
   codigoBarrasBoleto: string | null;
   dataPagamento: string | null;
-  dataExpiracao: string;
+  dataExpiracao: string | null;
   dataCriacao: string;
   dataAtualizacao: string;
 };
@@ -52,6 +53,27 @@ export async function getPaymentByOrder(
   return apiFetch<PaymentResponseDTO>(`/payments/orders/${orderId}`, {
     headers: await authHeaders(),
     cache: "no-store",
+  });
+}
+
+export async function createCardPayment(
+  orderId: number,
+  card: CardPaymentData,
+): Promise<PaymentResponseDTO> {
+  // Explicit allowlist: never forward the SDK form or raw card information.
+  return apiFetch<PaymentResponseDTO>(`/payments/orders/${orderId}`, {
+    method: "POST",
+    headers: await authHeaders(),
+    cache: "no-store",
+    body: JSON.stringify({
+      metodoPagamento: "CARTAO_CREDITO",
+      cartao: {
+        token: card.token,
+        parcelas: card.parcelas,
+        paymentMethodId: card.paymentMethodId,
+        issuerId: card.issuerId,
+      },
+    }),
   });
 }
 

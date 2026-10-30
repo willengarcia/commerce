@@ -1,4 +1,16 @@
 export default {
+  async headers() {
+    return [
+      {
+        source: "/reset-password",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "no-store" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+    ];
+  },
   experimental: {
     inlineCss: true,
     useCache: true,

@@ -43,6 +43,12 @@ export default async function AccountPage() {
       >
         Meus pedidos
       </Link>
+      <Link
+        href="/account/reviews"
+        className="mt-3 block w-full rounded-full border border-blue-600 p-3 text-center font-medium text-blue-600"
+      >
+        Minhas avaliações
+      </Link>
       <form action={logoutAction} className="mt-8">
         <button className="w-full rounded-full border border-neutral-300 p-3 font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900">
           Sair
