@@ -25,7 +25,7 @@ export function CreditCardPayment({
   onSubmit: (data: CardPaymentData) => Promise<void>;
   disabled: boolean;
 }) {
-  const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
+  const publicKey = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
 
   if (!publicKey) {
     return (
