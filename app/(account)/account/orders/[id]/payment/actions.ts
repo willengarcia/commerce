@@ -8,6 +8,7 @@ import {
   getPayment,
   type PaymentResponseDTO,
 } from "lib/api/payments";
+import { revalidatePath } from "next/cache";
 
 export type PaymentActionState = {
   error?: string;
@@ -18,6 +19,12 @@ function message(error: unknown): string {
   return error instanceof ApiError
     ? error.message
     : "Não foi possível processar o pagamento. Tente novamente.";
+}
+
+function revalidatePaymentOrder(payment: PaymentResponseDTO) {
+  revalidatePath("/account/orders");
+  revalidatePath(`/account/orders/${payment.orderId}`);
+  revalidatePath(`/account/orders/${payment.orderId}/payment`);
 }
 
 export async function createPaymentAction(
@@ -32,7 +39,9 @@ export async function refreshPaymentAction(
 ): Promise<PaymentActionState> {
   if (!positiveId(paymentId)) return { error: "Pagamento inválido." };
   try {
-    return { payment: await getPayment(paymentId) };
+    const payment = await getPayment(paymentId);
+    revalidatePaymentOrder(payment);
+    return { payment };
   } catch (error) {
     return { error: message(error) };
   }
@@ -43,7 +52,9 @@ export async function cancelPaymentAction(
 ): Promise<PaymentActionState> {
   if (!positiveId(paymentId)) return { error: "Pagamento inválido." };
   try {
-    return { payment: await cancelPayment(paymentId) };
+    const payment = await cancelPayment(paymentId);
+    revalidatePaymentOrder(payment);
+    return { payment };
   } catch (error) {
     return { error: message(error) };
   }

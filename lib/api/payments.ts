@@ -18,15 +18,15 @@ export type PaymentResponseDTO = {
     | "REEMBOLSADO";
   provider: string;
   valor: number;
-  externalId: string;
+  externalId: string | null;
   qrCodePix: string | null;
   pixCopiaCola: string | null;
   urlBoleto: string | null;
   codigoBarrasBoleto: string | null;
   dataPagamento: string | null;
   dataExpiracao: string | null;
-  dataCriacao: string;
-  dataAtualizacao: string;
+  dataCriacao: string | null;
+  dataAtualizacao: string | null;
 };
 
 async function authHeaders(): Promise<HeadersInit> {

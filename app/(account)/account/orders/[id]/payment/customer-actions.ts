@@ -5,6 +5,7 @@ import {
   createCardPayment,
   createPixPayment,
   getPaymentByOrder,
+  type PaymentResponseDTO,
 } from "lib/api/payments";
 import { getSessionToken } from "lib/api/auth";
 import { mustReusePayment, type PaymentState } from "lib/payment-state";
@@ -13,6 +14,7 @@ import {
   validCardData,
   type CardPaymentData,
 } from "lib/validation/customer-v110";
+import { revalidatePath } from "next/cache";
 
 const guardName = (id: number) => `payment_attempt_${id}`;
 async function findPayment(id: number) {
@@ -22,6 +24,12 @@ async function findPayment(id: number) {
     if (error instanceof ApiError && error.status === 404) return undefined;
     throw error;
   }
+}
+
+function revalidatePaymentOrder(payment: PaymentResponseDTO) {
+  revalidatePath("/account/orders");
+  revalidatePath(`/account/orders/${payment.orderId}`);
+  revalidatePath(`/account/orders/${payment.orderId}/payment`);
 }
 
 export async function inspectOrderPaymentAction(
@@ -81,6 +89,7 @@ export async function submitCustomerPaymentAction(
       path: `/account/orders/${orderId}/payment`,
       maxAge: 0,
     });
+    revalidatePaymentOrder(payment);
     return { payment };
   } catch {
     const result = await inspectOrderPaymentAction(orderId);
@@ -89,6 +98,7 @@ export async function submitCustomerPaymentAction(
         path: `/account/orders/${orderId}/payment`,
         maxAge: 0,
       });
+      revalidatePaymentOrder(result.payment);
       return { payment: result.payment };
     }
     return {

@@ -109,8 +109,10 @@ export function PaymentDetails({
 }) {
   const [error, setError] = useState<string>();
   const [copied, setCopied] = useState(false);
-  const [isExpired, setIsExpired] = useState(
-    () => Date.now() >= new Date(payment.dataExpiracao ?? "").getTime(),
+  const [isExpired, setIsExpired] = useState(() =>
+    payment.dataExpiracao
+      ? Date.now() >= new Date(payment.dataExpiracao).getTime()
+      : false,
   );
   const [pollingTimedOut, setPollingTimedOut] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -127,7 +129,10 @@ export function PaymentDetails({
         return;
       }
 
-      if (Date.now() >= new Date(payment.dataExpiracao ?? "").getTime()) {
+      if (
+        payment.dataExpiracao &&
+        Date.now() >= new Date(payment.dataExpiracao).getTime()
+      ) {
         setIsExpired(true);
         return;
       }
@@ -181,8 +186,9 @@ export function PaymentDetails({
         if (result.payment) {
           onPaymentChange(result.payment);
           setIsExpired(
-            Date.now() >=
-              new Date(result.payment.dataExpiracao ?? "").getTime(),
+            result.payment.dataExpiracao
+              ? Date.now() >= new Date(result.payment.dataExpiracao).getTime()
+              : false,
           );
         }
       } finally {
@@ -206,6 +212,11 @@ export function PaymentDetails({
       <p className="text-lg font-semibold">
         {payment.statusPagamento.replaceAll("_", " ")}
       </p>
+      {isPending ? (
+        <p className="mt-2 text-sm text-neutral-500">
+          Aguardando confirmação do pagamento
+        </p>
+      ) : null}
       {canPay && payment.qrCodePix ? (
         <Image
           src={`data:image/png;base64,${payment.qrCodePix}`}
