@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import LogoIcon from "./icons/logo";
+import Image from "next/image";
 
 export default function LogoSquare({ size }: { size?: "sm" | undefined }) {
   return (
@@ -12,10 +12,14 @@ export default function LogoSquare({ size }: { size?: "sm" | undefined }) {
         },
       )}
     >
-      <LogoIcon
+      <Image
+        src="/brand/platun-symbol.svg"
+        alt=""
+        width={24}
+        height={20}
         className={clsx({
-          "h-[16px] w-[16px]": !size,
-          "h-[10px] w-[10px]": size === "sm",
+          "h-auto w-[22px]": !size,
+          "h-auto w-[17px]": size === "sm",
         })}
       />
     </div>
