@@ -1,5 +1,6 @@
 import { CartProvider } from "components/cart/cart-context";
 import { Navbar } from "components/layout/navbar";
+import { Analytics } from "@vercel/analytics/next";
 import { GeistSans } from "geist/font/sans";
 import { getCurrentCartResolution } from "lib/api/cart";
 import { ReactNode } from "react";
@@ -39,6 +40,7 @@ export default async function RootLayout({
             <Toaster closeButton />
           </main>
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );
