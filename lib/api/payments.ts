@@ -1,4 +1,5 @@
 import "server-only";
+import { normalizeDeviceSessionId } from "lib/payment-device";
 
 import { getSessionToken } from "./auth";
 import { apiFetch } from "./client";
@@ -60,10 +61,13 @@ export async function createCardPayment(
   orderId: number,
   card: CardPaymentData,
 ): Promise<PaymentResponseDTO> {
+  const headers = Object.fromEntries(new Headers(await authHeaders()));
+  const deviceSessionId = normalizeDeviceSessionId(card.deviceSessionId);
+  if (deviceSessionId) headers["X-meli-session-id"] = deviceSessionId;
   // Explicit allowlist: never forward the SDK form or raw card information.
   return apiFetch<PaymentResponseDTO>(`/payments/orders/${orderId}`, {
     method: "POST",
-    headers: await authHeaders(),
+    headers,
     cache: "no-store",
     body: JSON.stringify({
       metodoPagamento: "CARTAO_CREDITO",

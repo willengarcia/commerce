@@ -1,6 +1,7 @@
 "use client";
 
 import { CardPayment, initMercadoPago } from "@mercadopago/sdk-react";
+import { normalizeDeviceSessionId } from "lib/payment-device";
 import type { CardPaymentData } from "lib/validation/customer-v110";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -50,6 +51,10 @@ export function MercadoPagoCardBrick({
       const issuerId = data.issuer_id ? Number(data.issuer_id) : null;
       const card: CardPaymentData = {
         token: data.token,
+        deviceSessionId: normalizeDeviceSessionId(
+          (window as Window & { MP_DEVICE_SESSION_ID?: unknown })
+            .MP_DEVICE_SESSION_ID,
+        ),
         parcelas: data.installments,
         paymentMethodId: data.payment_method_id,
         issuerId,

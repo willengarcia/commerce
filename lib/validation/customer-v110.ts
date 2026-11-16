@@ -27,6 +27,7 @@ export function validateReview(
 
 export type CardPaymentData = {
   token: string;
+  deviceSessionId?: string;
   parcelas: number;
   paymentMethodId: string;
   issuerId: number | null;

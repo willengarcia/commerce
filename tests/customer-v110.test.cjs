@@ -185,7 +185,10 @@ test("card service allowlists tokenized fields and never sends raw card or SDK p
     cartao: card,
   });
   assert.equal(h.calls[0].options.cache, "no-store");
-  assert.match(h.calls[0].options.headers.Authorization, /^Bearer /);
+  assert.match(
+    new Headers(h.calls[0].options.headers).get("Authorization"),
+    /^Bearer /,
+  );
 });
 test("card rejects invalid installments, issuer and token before any request", async () => {
   const h = harness();
@@ -396,7 +399,13 @@ test("public review rendering hides pending and rejected content", () => {
   assert.match(html, /content-APROVADA/);
   assert.doesNotMatch(html, /content-PENDENTE|content-REJEITADA/);
 });
-test("official React Brick initializes safely, restricts credit and forwards only tokenized DTO", async () => {
+test("official React Brick initializes safely, restricts credit and forwards only tokenized DTO", async (t) => {
+  const previousWindow = global.window;
+  global.window = { MP_DEVICE_SESSION_ID: "sdk-device-fixture" };
+  t.after(() => {
+    if (previousWindow === undefined) delete global.window;
+    else global.window = previousWindow;
+  });
   const effects = [];
   let settings, submitted, initialization;
   let releaseSubmission;
@@ -472,6 +481,7 @@ test("official React Brick initializes safely, restricts credit and forwards onl
   await firstSubmission;
   assert.deepEqual(submitted, {
     token: "local-token",
+    deviceSessionId: "sdk-device-fixture",
     parcelas: 3,
     paymentMethodId: "visa",
     issuerId: 42,
@@ -507,4 +517,28 @@ test("PIX details render backend QR code, copy code, amount, expiration and wait
   assert.match(html, /Copiar código PIX/);
   assert.match(html, /Aguardando confirmação do pagamento/);
   assert.match(html, /Expiração/);
+});
+
+test("device ID is forwarded only as a sanitized header, never in the payment body", async () => {
+  const h = harness();
+  const { createCardPayment } = h.load("lib/api/payments");
+  for (const value of [
+    "device-sdk-123",
+    undefined,
+    "",
+    "bad\r\nHeader: value",
+    {},
+    "x".repeat(1025),
+  ]) {
+    await createCardPayment(10, { ...card, deviceSessionId: value });
+    const request = h.calls.at(-1).options;
+    assert.equal(
+      new Headers({ ...request.headers }).get("X-meli-session-id"),
+      value === "device-sdk-123" ? value : null,
+    );
+    assert.deepEqual(JSON.parse(request.body), {
+      metodoPagamento: "CARTAO_CREDITO",
+      cartao: card,
+    });
+  }
 });
