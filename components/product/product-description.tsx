@@ -54,7 +54,7 @@ export function ProductDescription({ product }: { product: ProductViewModel }) {
     { label: "SKU", value: product.sku?.trim() },
     { label: "Marca", value: brand },
     { label: "Categoria", value: category },
-    { label: "Peso", value: weight !== undefined ? `${weight} kg` : undefined },
+    { label: "Peso", value: weight !== undefined ? `${weight} g` : undefined },
     {
       label: "Dimensões",
       value: dimensions.length
