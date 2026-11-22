@@ -9,6 +9,9 @@ import {
   Bars3Icon,
   ChevronDownIcon,
   ChevronRightIcon,
+  MagnifyingGlassIcon,
+  Squares2X2Icon,
+  TagIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import type { BrandViewModel, CategoryTreeNode } from "lib/api/types";
@@ -75,6 +78,14 @@ export default function MobileMenu({
       >
         <Bars3Icon className="h-4" />
       </button>
+      <button
+        type="button"
+        onClick={openMobileMenu}
+        aria-label="Buscar produtos, categorias e marcas"
+        className="absolute right-[4.25rem] top-4 z-10 flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 text-black transition-colors sm:hidden dark:border-neutral-700 dark:text-white"
+      >
+        <MagnifyingGlassIcon className="h-4 w-4" />
+      </button>
       <Transition show={isOpen}>
         <Dialog onClose={closeMobileMenu} className="relative z-50">
           <Transition.Child
@@ -112,7 +123,11 @@ export default function MobileMenu({
                     <Search />
                   </Suspense>
                 </div>
-                <MobileCatalogSection title="Categorias" id="mobile-categories">
+                <MobileCatalogSection
+                  title="Categorias"
+                  id="mobile-categories"
+                  icon={<Squares2X2Icon className="h-5 w-5" />}
+                >
                   {categoriesError ? (
                     <MobileMessage>
                       Não foi possível carregar as categorias.
@@ -127,7 +142,11 @@ export default function MobileMenu({
                     <MobileMessage>Nenhuma categoria disponível.</MobileMessage>
                   )}
                 </MobileCatalogSection>
-                <MobileCatalogSection title="Marcas" id="mobile-brands">
+                <MobileCatalogSection
+                  title="Marcas"
+                  id="mobile-brands"
+                  icon={<TagIcon className="h-5 w-5" />}
+                >
                   {brandsError ? (
                     <MobileMessage>
                       Não foi possível carregar as marcas.
@@ -189,10 +208,12 @@ export default function MobileMenu({
 function MobileCatalogSection({
   title,
   id,
+  icon,
   children,
 }: {
   title: string;
   id: string;
+  icon: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -206,7 +227,10 @@ function MobileCatalogSection({
         aria-controls={id}
         className="flex w-full items-center justify-between py-3 text-left text-xl"
       >
-        {title}
+        <span className="flex items-center gap-3">
+          {icon}
+          {title}
+        </span>
         {open ? (
           <ChevronDownIcon className="h-5 w-5" />
         ) : (
