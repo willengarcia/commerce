@@ -1,5 +1,10 @@
 import Grid from "components/grid";
 import ProductGridItems from "components/layout/product-grid-items";
+import ProductViewSwitcher, {
+  normalizeProductView,
+  productGridClass,
+  type ProductView,
+} from "components/layout/product-view-switcher";
 import { getBrand } from "lib/api/brands";
 import { getCategory } from "lib/api/categories";
 import { getProducts } from "lib/api/products";
@@ -24,7 +29,12 @@ export async function generateMetadata(props: {
 
 export default async function CategoryPage(props: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ page?: string; brandId?: string; q?: string }>;
+  searchParams?: Promise<{
+    page?: string;
+    brandId?: string;
+    q?: string;
+    view?: string;
+  }>;
 }) {
   const [{ id }, searchParams] = await Promise.all([
     props.params,
@@ -40,6 +50,7 @@ export default async function CategoryPage(props: {
       ? requestedBrandId
       : undefined;
   const searchValue = searchParams?.q || undefined;
+  const view = normalizeProductView(searchParams?.view);
   const page = Number.isFinite(requestedPage)
     ? Math.max(0, requestedPage - 1)
     : 0;
@@ -50,6 +61,7 @@ export default async function CategoryPage(props: {
   const currentParams = new URLSearchParams();
   if (searchValue) currentParams.set("q", searchValue);
   if (brandId) currentParams.set("brandId", String(brandId));
+  if (view !== "grid") currentParams.set("view", view);
   const pageHref = (nextPage: number) => {
     const params = new URLSearchParams(currentParams);
     params.set("page", String(nextPage));
@@ -61,10 +73,23 @@ export default async function CategoryPage(props: {
     const query = params.toString();
     return `${category.path}${query ? `?${query}` : ""}`;
   };
+  const viewLinks = Object.fromEntries(
+    (["list", "grid", "compact"] as ProductView[]).map((nextView) => {
+      const params = new URLSearchParams(currentParams);
+      params.delete("page");
+      if (nextView === "grid") params.delete("view");
+      else params.set("view", nextView);
+      const query = params.toString();
+      return [nextView, `${category.path}${query ? `?${query}` : ""}`];
+    }),
+  ) as Record<ProductView, string>;
 
   return (
     <section>
-      <h1 className="text-2xl font-semibold">Produtos</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">Produtos</h1>
+        <ProductViewSwitcher view={view} links={viewLinks} />
+      </div>
       <div className="mb-5 mt-3 flex flex-wrap items-center gap-2 text-sm">
         <span className="rounded-full border border-neutral-300 px-3 py-1 dark:border-neutral-700">
           Categoria: {category.name}
@@ -106,8 +131,8 @@ export default async function CategoryPage(props: {
           </Link>
         </div>
       ) : (
-        <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <ProductGridItems products={result.content} />
+        <Grid className={productGridClass(view)}>
+          <ProductGridItems products={result.content} view={view} />
         </Grid>
       )}
       {result.totalPages > 1 ? (

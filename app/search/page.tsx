@@ -1,5 +1,10 @@
 import Grid from "components/grid";
 import ProductGridItems from "components/layout/product-grid-items";
+import ProductViewSwitcher, {
+  normalizeProductView,
+  productGridClass,
+  type ProductView,
+} from "components/layout/product-view-switcher";
 import { getBrand } from "lib/api/brands";
 import { getCategory } from "lib/api/categories";
 import { getProducts } from "lib/api/products";
@@ -42,6 +47,7 @@ export default async function SearchPage(props: {
   const searchValue = value(searchParams, "q");
   const categoryId = positiveId(value(searchParams, "categoryId"));
   const brandId = positiveId(value(searchParams, "brandId"));
+  const view = normalizeProductView(value(searchParams, "view"));
   const requestedPage = Number(value(searchParams, "page") ?? "1");
   const page = Number.isFinite(requestedPage)
     ? Math.max(0, requestedPage - 1)
@@ -57,6 +63,17 @@ export default async function SearchPage(props: {
   if (searchValue) currentParams.set("q", searchValue);
   if (categoryId) currentParams.set("categoryId", String(categoryId));
   if (brandId) currentParams.set("brandId", String(brandId));
+  if (view !== "grid") currentParams.set("view", view);
+
+  const viewLinks = Object.fromEntries(
+    (["list", "grid", "compact"] as ProductView[]).map((nextView) => [
+      nextView,
+      hrefWith(currentParams, {
+        view: nextView === "grid" ? undefined : nextView,
+        page: undefined,
+      }),
+    ]),
+  ) as Record<ProductView, string>;
 
   const hasFilters = Boolean(searchValue || categoryId || brandId);
   const resultsText = products.length === 1 ? "resultado" : "resultados";
@@ -64,7 +81,10 @@ export default async function SearchPage(props: {
   return (
     <>
       <div className="mb-5">
-        <h1 className="text-2xl font-semibold">Produtos</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-semibold">Produtos</h1>
+          <ProductViewSwitcher view={view} links={viewLinks} />
+        </div>
         {searchValue ? (
           <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
             Exibindo {products.length} {resultsText} para &quot;{searchValue}
@@ -102,8 +122,8 @@ export default async function SearchPage(props: {
       </div>
 
       {products.length > 0 ? (
-        <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <ProductGridItems products={products} />
+        <Grid className={productGridClass(view)}>
+          <ProductGridItems products={products} view={view} />
         </Grid>
       ) : (
         <div className="rounded-lg border border-neutral-200 p-8 text-center dark:border-neutral-800">
