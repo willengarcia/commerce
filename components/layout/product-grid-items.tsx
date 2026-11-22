@@ -1,4 +1,5 @@
 import Price from "components/price";
+import RevealProduct from "components/layout/reveal-product";
 import type { ProductView } from "components/layout/product-view-switcher";
 import type { ProductViewModel } from "lib/api/types";
 import Image from "next/image";
@@ -13,12 +14,16 @@ export default function ProductGridItems({
 }) {
   return (
     <>
-      {products.map((product) => {
+      {products.map((product, index) => {
         const isList = view === "list";
         const isCompact = view === "compact";
 
         return (
-          <li key={product.id} className="min-w-0 animate-fadeIn">
+          <RevealProduct
+            key={product.id}
+            className="min-w-0"
+            delay={(index % 4) * 70}
+          >
             <Link
               className={
                 isList
@@ -68,7 +73,7 @@ export default function ProductGridItems({
                 />
               </div>
             </Link>
-          </li>
+          </RevealProduct>
         );
       })}
     </>
