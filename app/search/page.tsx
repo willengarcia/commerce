@@ -48,7 +48,7 @@ export default async function SearchPage(props: {
     : 0;
 
   const [result, category, brand] = await Promise.all([
-    getProducts({ page, name: searchValue, categoryId, brandId }),
+    getProducts({ page, size: 10, name: searchValue, categoryId, brandId }),
     categoryId ? getCategory(categoryId).catch(() => undefined) : undefined,
     brandId ? getBrand(brandId).catch(() => undefined) : undefined,
   ]);

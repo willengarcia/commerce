@@ -1,5 +1,6 @@
 "use client";
 
+import { logoutAction } from "app/(account)/actions";
 import { Dialog, Transition } from "@headlessui/react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -7,11 +8,16 @@ import { Fragment, Suspense, useEffect, useState } from "react";
 
 import {
   Bars3Icon,
+  ArrowRightOnRectangleIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   MagnifyingGlassIcon,
+  MapPinIcon,
+  ShoppingBagIcon,
   Squares2X2Icon,
+  StarIcon,
   TagIcon,
+  UserCircleIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import type { BrandViewModel, CategoryTreeNode } from "lib/api/types";
@@ -188,20 +194,97 @@ export default function MobileMenu({
                     ))}
                   </ul>
                 ) : null}
-                <Link
-                  href={isAuthenticated ? "/account" : "/login"}
-                  prefetch={true}
-                  onClick={closeMobileMenu}
-                  className="block py-2 text-xl text-black transition-colors hover:text-neutral-500 dark:text-white"
-                >
-                  {isAuthenticated ? "Minha conta" : "Entrar"}
-                </Link>
+                {isAuthenticated ? (
+                  <div className="mt-2 border-t border-neutral-200 pt-2 dark:border-neutral-800">
+                    <p className="px-1 py-2 text-sm font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      Sua conta
+                    </p>
+                    <nav aria-label="Atalhos da conta">
+                      <ul>
+                        <MobileAccountLink
+                          href="/account"
+                          icon={<UserCircleIcon className="h-5 w-5" />}
+                          closeMenu={closeMobileMenu}
+                        >
+                          Minha conta
+                        </MobileAccountLink>
+                        <MobileAccountLink
+                          href="/account/addresses"
+                          icon={<MapPinIcon className="h-5 w-5" />}
+                          closeMenu={closeMobileMenu}
+                        >
+                          Meus endereços
+                        </MobileAccountLink>
+                        <MobileAccountLink
+                          href="/account/orders"
+                          icon={<ShoppingBagIcon className="h-5 w-5" />}
+                          closeMenu={closeMobileMenu}
+                        >
+                          Meus pedidos
+                        </MobileAccountLink>
+                        <MobileAccountLink
+                          href="/account/reviews"
+                          icon={<StarIcon className="h-5 w-5" />}
+                          closeMenu={closeMobileMenu}
+                        >
+                          Minhas avaliações
+                        </MobileAccountLink>
+                      </ul>
+                    </nav>
+                    <form action={logoutAction} className="mt-2">
+                      <button
+                        type="submit"
+                        onClick={closeMobileMenu}
+                        className="flex w-full items-center gap-3 rounded-md px-1 py-3 text-left text-base text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-black dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-white"
+                      >
+                        <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                        Sair
+                      </button>
+                    </form>
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    prefetch={true}
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-3 py-3 text-xl text-black transition-colors hover:text-neutral-500 dark:text-white"
+                  >
+                    <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                    Entrar
+                  </Link>
+                )}
               </div>
             </Dialog.Panel>
           </Transition.Child>
         </Dialog>
       </Transition>
     </>
+  );
+}
+
+function MobileAccountLink({
+  href,
+  icon,
+  closeMenu,
+  children,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  closeMenu: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <li>
+      <Link
+        href={href}
+        prefetch
+        onClick={closeMenu}
+        className="flex items-center gap-3 rounded-md px-1 py-3 text-base text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-black dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-white"
+      >
+        {icon}
+        {children}
+      </Link>
+    </li>
   );
 }
 

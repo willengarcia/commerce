@@ -1,5 +1,6 @@
 import { CartProvider } from "components/cart/cart-context";
 import { Navbar } from "components/layout/navbar";
+import WhatsAppButton from "components/whatsapp-button";
 import { Analytics } from "@vercel/analytics/next";
 import { GeistSans } from "geist/font/sans";
 import { getCurrentCartResolution } from "lib/api/cart";
@@ -40,6 +41,7 @@ export default async function RootLayout({
             <Toaster closeButton />
           </main>
         </CartProvider>
+        <WhatsAppButton />
         <Analytics />
       </body>
     </html>
