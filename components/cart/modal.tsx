@@ -11,30 +11,42 @@ import { clearCartAction } from "./actions";
 import { useCart } from "./cart-context";
 import { DeleteItemButton } from "./delete-item-button";
 import OpenCart from "./open-cart";
+import { navigateAnalyticsDocument } from "lib/analytics/clarity";
 
 export default function CartModal({
   isAuthenticated,
+  initiallyOpen = false,
 }: {
   isAuthenticated: boolean;
+  initiallyOpen?: boolean;
 }) {
   const cart = useCart();
   const totalQuantity =
     cart?.cartItems.reduce((total, item) => total + item.quantidade, 0) ?? 0;
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(initiallyOpen);
+  function openCart() {
+    if (navigateAnalyticsDocument("/cart")) return;
+    setIsOpen(true);
+  }
   const quantityRef = useRef(totalQuantity);
 
   useEffect(() => {
-    if (totalQuantity > quantityRef.current) setIsOpen(true);
+    if (totalQuantity > quantityRef.current) openCart();
     quantityRef.current = totalQuantity;
   }, [totalQuantity]);
 
   return (
     <>
-      <button aria-label="Abrir carrinho" onClick={() => setIsOpen(true)}>
+      <button aria-label="Abrir carrinho" onClick={openCart}>
         <OpenCart quantity={totalQuantity} />
       </button>
       <Transition show={isOpen}>
-        <Dialog onClose={() => setIsOpen(false)} className="relative z-50">
+        <Dialog
+          data-private-cart="open"
+          data-clarity-mask="true"
+          onClose={() => setIsOpen(false)}
+          className="relative z-50"
+        >
           <Transition.Child
             as={Fragment}
             enter="transition-opacity duration-300"

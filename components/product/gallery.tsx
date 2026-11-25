@@ -1,4 +1,5 @@
 "use client";
+import { navigateAnalyticsDocument } from "lib/analytics/clarity";
 
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { GridTileImage } from "components/grid/tile";
@@ -19,6 +20,7 @@ export function Gallery({
   const updateImage = (index: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("image", index);
+    if (navigateAnalyticsDocument(`?${params.toString()}`)) return;
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 

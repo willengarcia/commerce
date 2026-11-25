@@ -13,6 +13,7 @@ export default function Search() {
 
   return (
     <Form
+      data-privacy-search="true"
       action="/search"
       className="w-max-[550px] relative w-full lg:w-80 xl:w-full"
     >

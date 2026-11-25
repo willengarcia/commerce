@@ -8,12 +8,15 @@
     "prettier:check": "prettier --check --ignore-unknown .",
     "test": "pnpm prettier:check",
     "test:customer": "node --test tests/customer-v110.test.cjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:privacy": "node --test tests/privacy.test.cjs",
+    "test:privacy:browser": "playwright test -c playwright.privacy.config.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@mercadopago/sdk-react": "^1.0.7",
+    "@microsoft/clarity": "1.0.2",
     "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
     "geist": "^1.3.1",
@@ -23,6 +26,7 @@
     "sonner": "^2.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.1",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/postcss": "^4.0.14",
     "@tailwindcss/typography": "^0.5.16",

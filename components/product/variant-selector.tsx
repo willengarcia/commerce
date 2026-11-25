@@ -1,4 +1,5 @@
 "use client";
+import { navigateAnalyticsDocument } from "lib/analytics/clarity";
 
 import clsx from "clsx";
 import { ProductOption, ProductVariant } from "lib/shopify/types";
@@ -42,6 +43,7 @@ export function VariantSelector({
   const updateOption = (name: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set(name, value);
+    if (navigateAnalyticsDocument(`?${params.toString()}`)) return;
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 

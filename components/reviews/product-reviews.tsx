@@ -48,6 +48,7 @@ export async function ProductReviews({ productId }: { productId: number }) {
   }
   return (
     <section
+      data-clarity-mask="true"
       id="avaliacoes"
       className="mx-auto mt-10 max-w-(--breakpoint-2xl) px-4"
     >

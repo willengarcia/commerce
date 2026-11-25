@@ -7,6 +7,7 @@ import {
 } from "@heroicons/react/24/outline";
 import LogoSquare from "components/logo-square";
 import Link from "next/link";
+import { PrivacySettings } from "components/privacy/privacy-settings";
 
 const {
   COMPANY_NAME,
@@ -150,6 +151,12 @@ export default function Footer() {
         <div className="mx-auto w-full max-w-7xl px-6 md:px-4 min-[1320px]:px-0">
           &copy; {currentYear} {brandName}.{" "}
           {FOOTER_COPYRIGHT_TEXT || "Todos os direitos reservados."}
+          <div className="mt-4 flex flex-wrap gap-4 text-neutral-200">
+            <PrivacySettings />
+            <a href="/privacy-policy" className="underline">
+              Política de Privacidade
+            </a>
+          </div>
         </div>
       </div>
     </footer>
