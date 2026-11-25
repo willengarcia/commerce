@@ -52,11 +52,7 @@ async function network(context: BrowserContext, fail = false) {
   return requests;
 }
 async function loaded(page: Page) {
-  await expect(
-    page
-      .getByRole("button", { name: "Preferências de privacidade", exact: true })
-      .first(),
-  ).toBeVisible();
+  await expect(page.locator("h1").first()).toBeVisible();
 }
 async function accept(page: Page) {
   await page
@@ -64,6 +60,60 @@ async function accept(page: Page) {
     .click();
   await expect(page.locator("#clarity-script")).toHaveCount(1);
 }
+
+test("popup X persists refusal and fits mobile and desktop", async ({
+  page,
+  context,
+}) => {
+  const requests = await network(context);
+  await page.goto("/privacy-policy");
+  const popup = page.getByTestId("consent-popup");
+  await expect(popup).toBeVisible();
+  for (const size of [
+    { width: 1280, height: 800 },
+    { width: 390, height: 844 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(size);
+    const box = await popup.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(size.width);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(size.height);
+    expect(await popup.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
+      true,
+    );
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "test-results/privacy-popup-mobile.png" });
+  await page.getByRole("button", { name: "Fechar e recusar análise" }).click();
+  await expect(popup).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key)!).analytics,
+      key,
+    ),
+  ).toBe(false);
+  await page.reload();
+  await loaded(page);
+  await expect(popup).toHaveCount(0);
+  expect(requests).toEqual([]);
+});
+
+test("Escape also refuses optional analysis", async ({ page, context }) => {
+  const requests = await network(context);
+  await page.goto("/privacy-policy");
+  await expect(page.getByTestId("consent-popup")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("consent-popup")).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key)!).analytics,
+      key,
+    ),
+  ).toBe(false);
+  expect(requests).toEqual([]);
+});
 
 test("no Clarity network before consent; refusal persists after reload", async ({
   page,

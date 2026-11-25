@@ -1,5 +1,6 @@
 "use client";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 import {
   CONSENT_KEY,
@@ -102,16 +103,32 @@ export function ConsentProvider({
       <span className="sr-only" role="status">
         {notice}
       </span>
-      {loaded && !consent && !dismissed && configured && (
-        <section
-          aria-labelledby="privacy-banner-title"
-          data-clarity-mask="true"
-          className="border-t border-slate-600 bg-[#080F1F] px-5 py-6 text-white"
-        >
-          <div className="mx-auto max-w-6xl">
-            <h2 id="privacy-banner-title" className="text-lg font-semibold">
+      <Dialog
+        open={loaded && !consent && !dismissed && configured && !open}
+        onClose={() => decide(false)}
+        className="fixed inset-0 z-[100]"
+      >
+        <div className="fixed inset-0 bg-black/60" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-3 sm:p-6">
+          <DialogPanel
+            data-testid="consent-popup"
+            data-clarity-mask="true"
+            className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-2xl border border-slate-500 bg-[#080F1F] p-5 text-white shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:p-8"
+          >
+            <button
+              type="button"
+              aria-label="Fechar e recusar análise"
+              onClick={() => decide(false)}
+              className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full text-slate-200 hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 sm:right-3 sm:top-3"
+            >
+              <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+            </button>
+            <DialogTitle
+              id="privacy-banner-title"
+              className="pr-10 text-lg font-semibold sm:text-xl"
+            >
               Sua privacidade é importante para nós
-            </h2>
+            </DialogTitle>
             <div className="mt-3 space-y-2 text-sm leading-6 text-slate-200">
               <p>
                 Utilizamos o Microsoft Clarity, uma ferramenta de análise de
@@ -135,7 +152,7 @@ export function ConsentProvider({
                 preferência poderá ser alterada a qualquer momento.
               </p>
             </div>
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button className={button} onClick={() => decide(false)}>
                 Recusar opcionais
               </button>
@@ -143,7 +160,7 @@ export function ConsentProvider({
                 Aceitar análise
               </button>
               <button
-                className={button}
+                className={`${button} sm:col-span-2`}
                 onClick={() => {
                   setAnalytics(false);
                   setOpen(true);
@@ -158,9 +175,9 @@ export function ConsentProvider({
             >
               Política de Privacidade
             </a>
-          </div>
-        </section>
-      )}
+          </DialogPanel>
+        </div>
+      </Dialog>
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
