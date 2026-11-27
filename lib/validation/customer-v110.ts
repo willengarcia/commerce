@@ -26,6 +26,8 @@ export function validateReview(
 }
 
 export type CardPaymentData = {
+  /** Quote used only by our server action; never forwarded to the payment API. */
+  orderTotal?: number;
   token: string;
   deviceSessionId?: string;
   parcelas: number;
@@ -34,6 +36,10 @@ export type CardPaymentData = {
 };
 export function validCardData(value: CardPaymentData): boolean {
   return (
+    (value.orderTotal === undefined ||
+      (typeof value.orderTotal === "number" &&
+        value.orderTotal > 0 &&
+        Number.isSafeInteger(Math.round(value.orderTotal * 100)))) &&
     typeof value.token === "string" &&
     Boolean(value.token.trim()) &&
     Number.isSafeInteger(value.parcelas) &&

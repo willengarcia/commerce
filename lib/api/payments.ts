@@ -5,6 +5,10 @@ import { getSessionToken } from "./auth";
 import { apiFetch } from "./client";
 import { ApiError } from "./errors";
 import type { CardPaymentData } from "lib/validation/customer-v110";
+import {
+  parseInstallmentConfig,
+  type PaymentInstallmentConfig,
+} from "lib/payment-installments";
 
 export type PaymentResponseDTO = {
   id: number;
@@ -19,6 +23,7 @@ export type PaymentResponseDTO = {
     | "REEMBOLSADO";
   provider: string;
   valor: number;
+  parcelas?: number | null;
   externalId: string | null;
   qrCodePix: string | null;
   pixCopiaCola: string | null;
@@ -35,6 +40,15 @@ async function authHeaders(): Promise<HeadersInit> {
   if (!token)
     throw new ApiError(401, "Sua sessão expirou. Entre novamente.", null);
   return { Authorization: `Bearer ${token}` };
+}
+
+export async function getPaymentInstallmentConfig(): Promise<PaymentInstallmentConfig> {
+  return parseInstallmentConfig(
+    await apiFetch("/payments/installments/config", {
+      headers: await authHeaders(),
+      cache: "no-store",
+    }),
+  );
 }
 
 export async function createPixPayment(

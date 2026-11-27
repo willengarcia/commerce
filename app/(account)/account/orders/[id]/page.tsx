@@ -1,4 +1,6 @@
 import { OrderAddressForm } from "components/account/order-address-form";
+import { OrderPaymentSummary } from "components/payment/order-payment-summary";
+import { Suspense } from "react";
 import Price from "components/price";
 import { getAddresses } from "lib/api/addresses";
 import { getCurrentCustomer } from "lib/api/customers";
@@ -68,7 +70,12 @@ export default async function OrderPage(props: {
                   {item.nomeProduto}
                 </Link>
                 {order.status === "ENTREGUE" ? (
-                  <Link href={`/product/${item.productId}#avaliacoes`} className="mt-2 block text-blue-600 hover:underline">Avaliar produto</Link>
+                  <Link
+                    href={`/product/${item.productId}#avaliacoes`}
+                    className="mt-2 block text-blue-600 hover:underline"
+                  >
+                    Avaliar produto
+                  </Link>
                 ) : null}
                 <span className="block text-neutral-500">
                   {item.skuProduto} · Quantidade: {item.quantidade}
@@ -98,6 +105,11 @@ export default async function OrderPage(props: {
         />
       </section>
 
+      <Suspense
+        fallback={<p className="mt-4 text-sm">Consultando pagamento...</p>}
+      >
+        <OrderPaymentSummary orderId={order.orderId} />
+      </Suspense>
       {order.status === "AGUARDANDO_PAGAMENTO" ? (
         <Link
           href={`/account/orders/${order.orderId}/payment`}

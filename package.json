@@ -10,7 +10,8 @@
     "test:customer": "node --test tests/customer-v110.test.cjs",
     "typecheck": "tsc --noEmit",
     "test:privacy": "node --test tests/privacy.test.cjs",
-    "test:privacy:browser": "playwright test -c playwright.privacy.config.ts"
+    "test:privacy:browser": "playwright test -c playwright.privacy.config.ts",
+    "test:installments:browser": "playwright test -c playwright.installments.config.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",

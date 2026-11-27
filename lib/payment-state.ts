@@ -3,6 +3,7 @@ export type PaymentState = {
   payment?: PaymentResponseDTO;
   error?: string;
   verifying?: boolean;
+  refreshInstallments?: boolean;
 };
 
 export function canRetryPayment(payment: PaymentResponseDTO): boolean {

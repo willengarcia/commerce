@@ -5,6 +5,7 @@ import {
   createCardPayment,
   createPixPayment,
   getPaymentByOrder,
+  getPaymentInstallmentConfig,
   type PaymentResponseDTO,
 } from "lib/api/payments";
 import { getSessionToken } from "lib/api/auth";
@@ -15,6 +16,38 @@ import {
   type CardPaymentData,
 } from "lib/validation/customer-v110";
 import { revalidatePath } from "next/cache";
+import { getOrder } from "lib/api/orders";
+import {
+  getMaxAllowedInstallments,
+  moneyCents,
+  type InstallmentQuoteResult,
+} from "lib/payment-installments";
+
+export async function loadInstallmentQuoteAction(
+  orderId: number,
+): Promise<InstallmentQuoteResult> {
+  if (!positiveId(orderId)) return { error: "Pedido inválido." };
+  try {
+    const [config, order] = await Promise.all([
+      getPaymentInstallmentConfig(),
+      getOrder(orderId),
+    ]);
+    if (
+      order.status !== "AGUARDANDO_PAGAMENTO" ||
+      moneyCents(order.valorTotal) <= 0
+    )
+      return {
+        error:
+          "Este pedido não está disponível para um novo pagamento. Atualize a página.",
+      };
+    return { quote: { config, amount: order.valorTotal } };
+  } catch {
+    return {
+      error:
+        "Não foi possível consultar as condições de parcelamento. Tente novamente.",
+    };
+  }
+}
 
 const guardName = (id: number) => `payment_attempt_${id}`;
 async function findPayment(id: number) {
@@ -71,6 +104,29 @@ export async function submitCustomerPaymentAction(
     (existing.payment && mustReusePayment(existing.payment))
   )
     return existing;
+  if (card) {
+    const current = await loadInstallmentQuoteAction(orderId);
+    if (!current.quote)
+      return { error: current.error, refreshInstallments: true };
+    const { amount, config } = current.quote;
+    if (
+      card.orderTotal !== undefined &&
+      (!Number.isFinite(card.orderTotal) ||
+        card.orderTotal < 0 ||
+        moneyCents(card.orderTotal) !== moneyCents(amount))
+    )
+      return {
+        error:
+          "O valor do pedido mudou. Confira as condições atualizadas e selecione novamente as parcelas.",
+        refreshInstallments: true,
+      };
+    if (card.parcelas > getMaxAllowedInstallments(amount, config))
+      return {
+        error:
+          "As condições de parcelamento mudaram. Selecione uma opção disponível.",
+        refreshInstallments: true,
+      };
+  }
   const jar = await cookies();
   // Server-only marker contains only the previous payment ID, never card data.
   // It survives reloads; the backend remains the authority for idempotency.
@@ -91,7 +147,38 @@ export async function submitCustomerPaymentAction(
     });
     revalidatePaymentOrder(payment);
     return { payment };
-  } catch {
+  } catch (cause) {
+    // Only a definite installment validation failure may release this attempt.
+    // Reconcile first; a transport error must never enable a duplicate charge.
+    if (
+      card &&
+      cause instanceof ApiError &&
+      cause.status === 422 &&
+      /parcela/i.test(cause.message)
+    ) {
+      try {
+        const confirmed = await findPayment(orderId);
+        if (confirmed && confirmed.id !== existing.payment?.id) {
+          jar.set(guardName(orderId), "", {
+            path: `/account/orders/${orderId}/payment`,
+            maxAge: 0,
+          });
+          revalidatePaymentOrder(confirmed);
+          return { payment: confirmed };
+        }
+        jar.set(guardName(orderId), "", {
+          path: `/account/orders/${orderId}/payment`,
+          maxAge: 0,
+        });
+        return {
+          payment: confirmed,
+          error: cause.message,
+          refreshInstallments: true,
+        };
+      } catch {
+        /* Uncertain reconciliation keeps the existing guard. */
+      }
+    }
     const result = await inspectOrderPaymentAction(orderId);
     if (result.payment && result.payment.id !== existing.payment?.id) {
       jar.set(guardName(orderId), "", {

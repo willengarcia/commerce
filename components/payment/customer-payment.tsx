@@ -11,6 +11,7 @@ import {
   type PaymentState,
 } from "lib/payment-state";
 import type { CardPaymentData } from "lib/validation/customer-v110";
+import { paymentMethodDescription } from "lib/payment-installments";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function CustomerPayment({
@@ -28,6 +29,7 @@ export function CustomerPayment({
   const [method, setMethod] = useState<"PIX" | "CARTAO_CREDITO">("PIX");
   const [busy, setBusy] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [installmentRevision, setInstallmentRevision] = useState(0);
   const lock = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -89,7 +91,10 @@ export function CustomerPayment({
     setBusy(true);
     try {
       const result = await submitCustomerPaymentAction(orderId, card);
-      if (mounted.current) setState(result);
+      if (mounted.current) {
+        setState(result);
+        if (result.refreshInstallments) setInstallmentRevision((v) => v + 1);
+      }
     } catch {
       if (mounted.current)
         setState((previous) => ({
@@ -136,6 +141,9 @@ export function CustomerPayment({
           />
         ) : (
           <div role="status" className="rounded-lg border p-4">
+            <p className="mb-2 text-sm">
+              {paymentMethodDescription(state.payment)}
+            </p>
             <p className="font-semibold">
               {paymentStatusLabel[state.payment.statusPagamento]}
             </p>
@@ -200,6 +208,7 @@ export function CustomerPayment({
             </button>
           ) : (
             <CreditCardPayment
+              refreshKey={installmentRevision}
               orderId={orderId}
               amount={amount}
               disabled={busy}

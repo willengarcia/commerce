@@ -10,6 +10,15 @@ const root = path.resolve(__dirname, "..");
 function harness({
   handler = async () => undefined,
   authenticated = true,
+  installmentHandler = async (url) =>
+    url === "/payments/installments/config"
+      ? {
+          enabled: true,
+          minimumOrderValue: 100,
+          maxInstallments: 5,
+          buyerPaysInterest: true,
+        }
+      : { orderId: 10, valorTotal: 150, status: "AGUARDANDO_PAGAMENTO" },
   overrides = {},
 } = {}) {
   const cache = new Map();
@@ -36,6 +45,8 @@ function harness({
     "lib/api/client": {
       apiFetch: async (url, options = {}) => {
         calls.push({ url, options });
+        if (url === "/payments/installments/config" || url === "/orders/10")
+          return installmentHandler(url, options);
         return handler(url, options);
       },
     },
@@ -419,6 +430,8 @@ test("official React Brick initializes safely, restricts credit and forwards onl
     useState: (value) => [typeof value === "boolean" ? true : value, () => {}],
     useEffect: (fn) => effects.push(fn),
     useCallback: (fn) => fn,
+    useMemo: (fn) => fn(),
+    useId: () => "fixture",
   };
   const h = harness({
     overrides: {
@@ -442,6 +455,7 @@ test("official React Brick initializes safely, restricts credit and forwards onl
     amount: 123.45,
     orderId: 10,
     disabled: false,
+    maxInstallments: 5,
     onSubmit: async (value) => {
       submitted = value;
       submissionCount += 1;
@@ -456,6 +470,8 @@ test("official React Brick initializes safely, restricts credit and forwards onl
   });
   assert.equal(settings.initialization.amount, 123.45);
   assert.deepEqual(settings.customization.paymentMethods, {
+    minInstallments: 1,
+    maxInstallments: 5,
     types: { excluded: ["debit_card", "prepaid_card"] },
   });
   const firstSubmission = settings.onSubmit(
@@ -480,6 +496,7 @@ test("official React Brick initializes safely, restricts credit and forwards onl
   releaseSubmission();
   await firstSubmission;
   assert.deepEqual(submitted, {
+    orderTotal: 123.45,
     token: "local-token",
     deviceSessionId: "sdk-device-fixture",
     parcelas: 3,
@@ -541,4 +558,235 @@ test("device ID is forwarded only as a sanitized header, never in the payment bo
       cartao: card,
     });
   }
+});
+
+test("installment thresholds use integer cents and dynamic backend limits", () => {
+  const { getMaxAllowedInstallments, moneyCents, parseInstallmentConfig } =
+    harness().load("lib/payment-installments");
+  const config = {
+    enabled: true,
+    minimumOrderValue: 100,
+    maxInstallments: 5,
+    buyerPaysInterest: true,
+  };
+  for (const [amount, expected] of [
+    [99.99, 1],
+    [100, 1],
+    [100.01, 5],
+    [150, 5],
+  ])
+    assert.equal(getMaxAllowedInstallments(amount, config), expected);
+  assert.equal(
+    getMaxAllowedInstallments(150, { ...config, maxInstallments: 3 }),
+    3,
+  );
+  assert.equal(
+    getMaxAllowedInstallments(150, { ...config, enabled: false }),
+    1,
+  );
+  assert.equal(
+    getMaxAllowedInstallments(150, { ...config, maxInstallments: 1 }),
+    1,
+  );
+  assert.equal(moneyCents(100.01), 10001);
+  for (const value of [
+    null,
+    {},
+    { ...config, minimumOrderValue: NaN },
+    { ...config, maxInstallments: 0 },
+  ])
+    assert.throws(() => parseInstallmentConfig(value));
+});
+test("configuration uses authenticated no-store HTTP and authoritative order amount", async () => {
+  const h = harness();
+  const result = await h.load(actionsPath).loadInstallmentQuoteAction(10);
+  assert.equal(result.quote.amount, 150);
+  const request = h.calls.find(
+    (c) => c.url === "/payments/installments/config",
+  );
+  assert.equal(request.options.cache, "no-store");
+  assert.match(
+    new Headers(request.options.headers).get("Authorization"),
+    /^Bearer /,
+  );
+});
+test("configuration failure, changed quote and disallowed installments never POST", async () => {
+  for (const kind of ["offline", "changed", "over-limit"]) {
+    let h;
+    h = harness({
+      installmentHandler: async (url) => {
+        if (kind === "offline") throw Error("offline");
+        return url.includes("/config")
+          ? {
+              enabled: true,
+              minimumOrderValue: 100,
+              maxInstallments: 3,
+              buyerPaysInterest: true,
+            }
+          : { valorTotal: 150, status: "AGUARDANDO_PAGAMENTO" };
+      },
+      handler: async () => {
+        throw new (h.load("lib/api/errors").ApiError)(404, "Not found", null);
+      },
+    });
+    const result = await h.load(actionsPath).submitCustomerPaymentAction(10, {
+      ...card,
+      orderTotal: kind === "changed" ? 140 : 150,
+      parcelas: kind === "over-limit" ? 4 : 2,
+    });
+    assert.equal(result.refreshInstallments, true);
+    assert.ok(result.error);
+    assert.equal(h.calls.filter((c) => c.options.method === "POST").length, 0);
+    assert.equal(h.cookieValues.has("payment_attempt_10"), false);
+  }
+});
+test("installment 422 preserves API message, reconciles and enables a new choice without resubmitting", async () => {
+  let h;
+  h = harness({
+    handler: async (_url, options) => {
+      const { ApiError } = h.load("lib/api/errors");
+      if (options.method === "POST")
+        throw new ApiError(
+          422,
+          "O número máximo de parcelas permitido é 3",
+          null,
+        );
+      throw new ApiError(404, "Not found", null);
+    },
+  });
+  const result = await h
+    .load(actionsPath)
+    .submitCustomerPaymentAction(10, card);
+  assert.equal(result.error, "O número máximo de parcelas permitido é 3");
+  assert.equal(result.refreshInstallments, true);
+  assert.equal(result.verifying, undefined);
+  assert.equal(h.cookieValues.has("payment_attempt_10"), false);
+  assert.equal(h.calls.filter((c) => c.options.method === "POST").length, 1);
+});
+test("422 followed by reconciliation outage remains blocked against duplicate charges", async () => {
+  let sent = false,
+    h;
+  h = harness({
+    handler: async (_url, options) => {
+      const { ApiError } = h.load("lib/api/errors");
+      if (options.method === "POST") {
+        sent = true;
+        throw new ApiError(422, "Quantidade de parcelas inválida", null);
+      }
+      if (sent) throw Error("offline");
+      throw new ApiError(404, "Not found", null);
+    },
+  });
+  const result = await h
+    .load(actionsPath)
+    .submitCustomerPaymentAction(10, card);
+  assert.equal(result.verifying, true);
+  assert.equal(h.cookieValues.has("payment_attempt_10"), true);
+  await h.load(actionsPath).submitCustomerPaymentAction(10, card);
+  assert.equal(h.calls.filter((c) => c.options.method === "POST").length, 1);
+});
+test("payment history never derives installment prices or assumes old cards were paid in 1x", () => {
+  const { paymentMethodDescription: label } = harness().load(
+    "lib/payment-installments",
+  );
+  assert.equal(
+    label({ metodoPagamento: "CARTAO_CREDITO", parcelas: 3 }),
+    "Cartão de crédito — 3x",
+  );
+  assert.equal(
+    label({ metodoPagamento: "CARTAO_CREDITO", parcelas: 1 }),
+    "Cartão de crédito — À vista",
+  );
+  for (const parcelas of [null, undefined, 0])
+    assert.equal(
+      label({ metodoPagamento: "CARTAO_CREDITO", parcelas }),
+      "Cartão de crédito — Parcelamento não informado",
+    );
+  assert.equal(
+    label({ metodoPagamento: "PIX", parcelas: null }),
+    "PIX — À vista",
+  );
+});
+
+test("an older async quote cannot overwrite a newer order amount", async (t) => {
+  const before = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
+  process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY = "fixture";
+  t.after(() => {
+    if (before === undefined)
+      delete process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
+    else process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY = before;
+  });
+  const slots = [];
+  let index = 0,
+    effect,
+    cleanup,
+    dependencies;
+  const pending = [];
+  const react = {
+    ...React,
+    useState(initial) {
+      const i = index++;
+      if (!(i in slots)) slots[i] = initial;
+      return [
+        slots[i],
+        (value) => {
+          slots[i] = typeof value === "function" ? value(slots[i]) : value;
+        },
+      ];
+    },
+    useRef(initial) {
+      const i = index++;
+      return slots[i] ?? (slots[i] = { current: initial });
+    },
+    useEffect(fn, deps) {
+      if (!dependencies || deps.some((v, i) => v !== dependencies[i])) {
+        dependencies = deps;
+        effect = fn;
+      }
+    },
+  };
+  const h = harness({
+    overrides: {
+      react,
+      "next/dynamic": () => () => null,
+      [actionsPath]: {
+        loadInstallmentQuoteAction: () =>
+          new Promise((resolve) => pending.push(resolve)),
+      },
+    },
+  });
+  const { CreditCardPayment } = h.load(
+    "components/payment/credit-card-payment",
+  );
+  function render(amount) {
+    index = 0;
+    const tree = CreditCardPayment({
+      amount,
+      orderId: 10,
+      disabled: false,
+      onSubmit: async () => {},
+    });
+    if (effect) {
+      cleanup?.();
+      cleanup = effect();
+      effect = undefined;
+    }
+    return tree;
+  }
+  render(150);
+  render(200);
+  const config = {
+    enabled: true,
+    minimumOrderValue: 100,
+    maxInstallments: 5,
+    buyerPaysInterest: true,
+  };
+  pending[1]({ quote: { amount: 200, config } });
+  await new Promise(setImmediate);
+  pending[0]({ quote: { amount: 150, config } });
+  await new Promise(setImmediate);
+  const html = renderToStaticMarkup(render(200));
+  assert.match(html, /200,00/);
+  assert.doesNotMatch(html, /150,00/);
+  cleanup?.();
 });
